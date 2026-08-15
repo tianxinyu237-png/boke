@@ -1,0 +1,346 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* KaTeX math rendering */
+@import "katex/dist/katex.min.css";
+
+/* ── Serenity theme — dark-first, purple accent ── */
+
+/* Default: dark mode */
+:root {
+  --color-bg: 27 27 34;
+  --color-bg-soft: 36 36 48;
+  --color-bg-mute: 44 44 54;
+  --color-surface: 255 255 255;
+  --color-surface-alpha: 0.04;
+  --color-text: 255 255 255;
+  --color-text-secondary: 226 226 226;
+  --color-text-secondary-alpha: 1;
+  --color-text-muted: 226 226 226;
+  --color-text-muted-alpha: 1;
+  --color-accent: 192 132 252;
+  --color-accent-secondary: 167 139 250;
+  --color-border: 255 255 255;
+  --color-border-alpha: 0.08;
+  --color-border-hover: 255 255 255;
+  --color-border-hover-alpha: 0.15;
+  /* hero gradient */
+  --hero-from: #7DCDE8;
+  --hero-via: #c084fc;
+  --hero-to: #f093fb;
+}
+
+/* Light mode override */
+.light {
+  --color-bg: 245 245 245;
+  --color-bg-soft: 239 239 239;
+  --color-bg-mute: 232 232 232;
+  --color-surface: 0 0 0;
+  --color-surface-alpha: 0.04;
+  --color-text: 26 26 26;
+  --color-text-secondary: 0 0 0;
+  --color-text-secondary-alpha: 0.6;
+  --color-text-muted: 0 0 0;
+  --color-text-muted-alpha: 0.4;
+  --color-accent: 14 165 233;
+  --color-accent-secondary: 56 189 248;
+  --color-border: 0 0 0;
+  --color-border-alpha: 0.08;
+  --color-border-hover: 0 0 0;
+  --color-border-hover-alpha: 0.15;
+  --hero-from: #0ea5e9;
+  --hero-via: #22d3ee;
+  --hero-to: #38bdf8;
+}
+
+/* ── Base layer ── */
+@layer base {
+  body {
+    color: rgb(var(--color-text));
+    background-color: rgb(var(--color-bg));
+    background-image:
+      radial-gradient(ellipse at 50% 0%, rgb(var(--color-accent) / 0.06) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 20%, rgb(var(--color-accent) / 0.03) 0%, transparent 40%);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  html {
+    transition: background-color 0.4s ease, color 0.4s ease;
+  }
+}
+
+/* ── Page gradient (top accent bleed) ── */
+.page-gradient {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 300px;
+  background: linear-gradient(
+    180deg,
+    rgb(var(--color-accent) / 0.08) 0%,
+    transparent 100%
+  );
+  pointer-events: none;
+  z-index: -1;
+}
+
+@layer components {
+  /* ── Glass card ── */
+  .glass-card {
+    @apply border rounded-2xl transition-all duration-300;
+    background: rgb(var(--color-bg-soft));
+    border-color: rgb(var(--color-border) / var(--color-border-alpha));
+  }
+  .glass-card:hover {
+    border-color: rgb(var(--color-accent) / 0.4);
+    transform: translateY(-2px);
+    box-shadow:
+      0 8px 30px rgba(0, 0, 0, 0.18),
+      0 0 0 1px rgb(var(--color-accent) / 0.1);
+  }
+  .light .glass-card:hover {
+    box-shadow:
+      0 8px 30px rgba(0, 0, 0, 0.08),
+      0 0 0 1px rgb(var(--color-accent) / 0.15);
+  }
+
+  /* ── Prose (article body) ── */
+  .prose {
+    color: rgb(var(--color-text-secondary) / var(--color-text-secondary-alpha));
+    line-height: 1.85;
+  }
+  
+/* ── TOC anchor offset (sticky header is h-14 = 56px) ── */
+#article-content h2,
+#article-content h3 {
+  scroll-margin-top: 80px;
+}
+
+/* ── Code block: copy button wrapper + line numbers ── */
+.code-block-wrapper {
+  position: relative;
+}
+.code-block-wrapper pre {
+  margin: 0;
+}
+/* Line numbers via CSS counter */
+#article-content pre code {
+  counter-reset: line;
+}
+#article-content pre code .line {
+  counter-increment: line;
+  display: block;
+}
+#article-content pre code .line::before {
+  content: counter(line);
+  display: inline-block;
+  width: 2.5em;
+  margin-right: 1em;
+  text-align: right;
+  color: rgb(var(--color-text-muted) / 0.35);
+  user-select: none;
+}
+
+.prose h2 {
+    color: rgb(var(--color-text));
+    font-size: 1.5rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin-top: 3.5rem;
+    margin-bottom: 1.25rem;
+    scroll-margin-top: 5rem;
+  }
+  .prose h3 {
+    color: rgb(var(--color-text));
+    font-size: 1.25rem;
+    font-weight: 500;
+    margin-top: 2.5rem;
+    margin-bottom: 1rem;
+    scroll-margin-top: 5rem;
+  }
+  .prose p {
+    margin-bottom: 1.5rem;
+    max-width: 65ch;
+  }
+  .prose a {
+    color: rgb(var(--color-accent));
+    text-decoration: underline;
+    text-underline-offset: 4px;
+    text-decoration-color: rgb(var(--color-accent) / 0.3);
+    transition: all 0.2s;
+  }
+  .prose a:hover {
+    text-decoration-color: rgb(var(--color-accent));
+  }
+  .prose code {
+    background: rgb(var(--color-bg-mute));
+    color: rgb(var(--color-accent));
+    padding: 0.125rem 0.375rem;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    font-family: var(--font-geist-mono), monospace;
+  }
+  .prose pre {
+    background: rgb(var(--color-bg-soft));
+    border: 1px solid rgb(var(--color-border) / var(--color-border-alpha));
+    border-radius: 1rem;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    overflow-x: auto;
+  }
+  .prose pre code {
+    background: transparent;
+    color: rgb(var(--color-text));
+    padding: 0;
+    font-size: 0.875rem;
+    line-height: 1.625;
+  }
+  .prose ul,
+  .prose ol {
+    margin-bottom: 1.5rem;
+    padding-left: 1.5rem;
+  }
+  .prose li {
+    margin-bottom: 0.5rem;
+  }
+  .prose li::marker {
+    color: rgb(var(--color-text-muted) / var(--color-text-muted-alpha));
+  }
+  .prose blockquote {
+    border-left: 2px solid rgb(var(--color-accent));
+    padding-left: 1.25rem;
+    font-style: italic;
+    color: rgb(var(--color-text-muted) / var(--color-text-muted-alpha));
+    margin: 2rem 0;
+  }
+  .prose strong {
+    color: rgb(var(--color-text));
+    font-weight: 600;
+  }
+  .prose img {
+    border-radius: 1rem;
+    margin: 2.5rem 0;
+  }
+  .prose hr {
+    border-color: rgb(var(--color-border) / var(--color-border-alpha));
+    margin: 3rem 0;
+  }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: rgb(var(--color-text-muted) / 0.2);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgb(var(--color-text-muted) / 0.35);
+}
+
+/* Selection */
+::selection {
+  background: rgb(var(--color-accent) / 0.2);
+  color: rgb(var(--color-text));
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Focus visible ring for keyboard navigation ── */
+*:focus-visible {
+  outline: 2px solid rgb(var(--color-accent) / 0.5);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+body.has-custom-bg .glass-card {
+  background: rgb(var(--color-bg));
+  border-color: rgb(var(--color-border) / 0.15);
+}
+body.has-custom-bg .backdrop-blur-md,
+body.has-custom-bg .backdrop-blur-xl,
+body.has-custom-bg .backdrop-blur-2xl {
+  --tw-backdrop-blur: blur(4px);
+}
+
+/* ══ 全局可读性修复：内容容器毛玻璃隔离层 (2026-08-01) ══ */
+/* 所有页面的主体内容容器（max-w-* mx-auto，PageTransition 包装层直接子元素）
+   统一加半透明深色底 + 毛玻璃，文字不再直接叠在全屏插画背景上。
+   hero 全宽 section 与 fixed 浮动组件不含 max-w- 类，天然不受影响。 */
+.page-transition-wrap > div[class*="max-w-"] {
+  /* 半透明深色底隔离层 —— 不用 backdrop-filter：
+     大面积 backdrop-filter + 背景图会触发浏览器 GPU 合成降采样，
+     导致整个页面（含文字）变模糊。背景图本身是高清 4K，保持锐利。 */
+  background-color: rgba(0, 0, 0, 0.56);
+  border-radius: 12px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.18);
+}
+
+/* 毛玻璃容器内的正文文字提亮 + 文字阴影，保证对比度 */
+.page-transition-wrap > div[class*="max-w-"] p,
+.page-transition-wrap > div[class*="max-w-"] li,
+.page-transition-wrap > div[class*="max-w-"] h1,
+.page-transition-wrap > div[class*="max-w-"] h2,
+.page-transition-wrap > div[class*="max-w-"] h3,
+.page-transition-wrap > div[class*="max-w-"] h4,
+.page-transition-wrap > div[class*="max-w-"] time {
+  color: #ffffff;
+  text-shadow: 0px 1px 4px rgba(0, 0, 0, 0.9);
+}
+/* 链接保留主题紫色，仅加阴影保证可读 */
+.page-transition-wrap > div[class*="max-w-"] a {
+  text-shadow: 0px 1px 4px rgba(0, 0, 0, 0.9);
+}
+.page-transition-wrap > div[class*="max-w-"] a:hover {
+  text-decoration-color: currentColor;
+}
+
+/* 次要文字/日期标签：浅灰 */
+.page-transition-wrap > div[class*="max-w-"] .text-text-muted,
+.page-transition-wrap > div[class*="max-w-"] .text-text-secondary,
+.page-transition-wrap > div[class*="max-w-"] time,
+.page-transition-wrap > div[class*="max-w-"] .text-sm {
+  color: #e2e2e2 !important;
+}
+
+/* 亮色模式下毛玻璃更淡，避免过黑 */
+.light .page-transition-wrap > div[class*="max-w-"] {
+  background-color: rgba(255, 255, 255, 0.6);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+}
+.light .page-transition-wrap > div[class*="max-w-"] p,
+.light .page-transition-wrap > div[class*="max-w-"] li,
+.light .page-transition-wrap > div[class*="max-w-"] h1,
+.light .page-transition-wrap > div[class*="max-w-"] h2,
+.light .page-transition-wrap > div[class*="max-w-"] h3,
+.light .page-transition-wrap > div[class*="max-w-"] h4 {
+  color: #1a1a1a;
+  text-shadow: none;
+}
+/* 导航横向滚动时不显示滚动条 (移动端) */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.light .page-transition-wrap > div[class*="max-w-"] .text-text-muted,
+.light .page-transition-wrap > div[class*="max-w-"] .text-text-secondary,
+.light .page-transition-wrap > div[class*="max-w-"] time {
+  color: #555555 !important;
+}
+
+/* 首页文章卡片在毛玻璃容器内的 hover 效果微调 */
+.page-transition-wrap > div[class*="max-w-"] .glass-card {
+  background: rgb(var(--color-bg) / 0.65);
+  border-color: rgb(var(--color-border) / 0.15);
+}
+

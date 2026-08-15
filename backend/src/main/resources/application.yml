@@ -1,0 +1,68 @@
+server:
+  port: 8080
+
+# --- App-level config ---
+app:
+  upload-dir: /app/uploads
+  admin-password: ${APP_ADMIN_PASSWORD:323410}
+  admin-token: ${APP_ADMIN_TOKEN:devlog-prod-token-change-me}
+
+spring:
+  application:
+    name: devlog-backend
+
+  # --- Database: H2 file-based for local dev, PostgreSQL for production ---
+  # Active profile: "dev" uses H2, "prod" uses PostgreSQL
+
+  datasource:
+    url: jdbc:h2:file:./data/devlog;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+  jpa:
+    hibernate:
+      ddl-auto: update  # Preserve data across restarts
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  # Seed data — only runs on first startup with empty DB (not needed after)
+  sql:
+    init:
+      mode: never
+
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 100MB
+      location: /tmp
+
+# --- Production profile (PostgreSQL) ---
+# Activate with: --spring.profiles.active=prod
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+  datasource:
+    url: jdbc:h2:file:./data/devlog;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  h2:
+    console:
+      enabled: false
+
+  jpa:
+    hibernate:
+      ddl-auto: validate  # Don't drop tables in production
+    show-sql: false

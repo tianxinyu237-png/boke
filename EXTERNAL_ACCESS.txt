@@ -1,0 +1,84 @@
+================================================================
+  tianboyuan.top 外网访问指南
+================================================================
+
+要让外网通过 tianboyuan.top 访问你的博客，需要解决两个问题：
+1. Docker 能跑起来（当前受 WSL2/Hyper-V 影响）
+2. 外网流量能到达你的电脑
+
+--- 问题1：修复 Docker ---
+
+你的 Docker Desktop 无法启动，原因是 VMware 占用了 Hyper-V 虚拟化层。
+Windows 同一时间只能运行一个 Hypervisor。
+
+解决方案（三选一）：
+
+方案A - 切换到 Hyper-V（推荐给 Docker）
+  1. 卸载 VMware
+  2. 管理员 PowerShell 运行：
+     dism /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all
+     dism /online /enable-feature /featurename:VirtualMachinePlatform /all
+  3. 重启电脑
+  4. 运行: wsl --install
+  5. 启动 Docker Desktop
+
+方案B - 保留 VMware，用 Docker 旧版
+  安装 Docker Toolbox（使用 VirtualBox 而非 Hyper-V）
+  注意：Docker Toolbox 已停止维护，不推荐
+
+方案C - 部署到云服务器
+  买一台最低配云服务器（阿里云/腾讯云 99元/年）
+  Docker 部署到服务器上，不受本地 Hyper-V 限制
+
+--- 问题2：外网访问 ---
+
+方案A - 有公网IP
+  1. 路由器设置端口转发：外部 80 → 你电脑IP:80
+  2. DNS 设置：tianboyuan.top A 记录 → 你的公网IP
+  3. 检查电脑防火墙允许 80 端口入站
+
+方案B - Cloudflare Tunnel（无需公网IP，推荐）
+  1. 域名 DNS 托管到 Cloudflare（免费）
+  2. 安装 cloudflared：https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/
+  3. 登录: cloudflared tunnel login
+  4. 创建隧道: cloudflared tunnel create devlog-blog
+  5. 编辑 cloudflared/config.yml，填入你的 tunnel ID
+  6. 在 docker-compose.yml 中取消 cloudflared 服务的注释
+  7. 重新启动: docker compose up -d
+
+方案C - frp 内网穿透
+  需要一台有公网IP的 VPS 作为中转
+
+================================================================
+  Docker 配置文件清单（已就绪）
+================================================================
+
+D:\zhiyudalao123\博客\
+  docker-compose.yml     # 服务编排（backend + frontend + nginx）
+  backend.env            # 后端环境变量
+  .env                   # Docker Compose 全局变量
+  nginx/
+    nginx.conf           # Nginx 主配置
+    conf.d/
+      tianboyuan.conf    # 域名虚拟主机
+  cloudflared/
+    config.yml.example   # Cloudflare Tunnel 配置模板
+  start.ps1              # 一键启动脚本（PowerShell）
+
+================================================================
+  手动启动命令（PowerShell）
+================================================================
+
+cd D:\zhiyudalao123\博客
+
+# 检查 .env 文件中的密码是否正确
+notepad .env
+
+# 构建并启动
+docker compose up -d --build
+
+# 查看日志
+docker compose logs -f
+
+# 停止
+docker compose down

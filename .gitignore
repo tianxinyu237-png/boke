@@ -1,0 +1,41 @@
+# === Dependencies ===
+node_modules/
+
+# === Next.js build output ===
+.next/
+out/
+
+# === TypeScript build info ===
+*.tsbuildinfo
+
+# === Java / Maven ===
+target/
+*.class
+
+# === H2 database (contains real data — never commit) ===
+backend/data/
+*.mv.db
+*.trace.db
+
+# === Environment variables (sensitive: admin password/token — never commit) ===
+.env
+backend.env
+
+# === Logs ===
+*.log
+logs/
+
+# === IDE ===
+.idea/
+.vscode/
+
+# === OS ===
+.DS_Store
+Thumbs.db
+
+# === C 作业编译产物（误放进 frontend 目录，与博客无关）===
+zuoye.*
+vc140.pdb
+
+# === 本地参考仓库（非博客项目）===
+github/

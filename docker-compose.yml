@@ -1,0 +1,53 @@
+services:
+  backend:
+    build: ./backend
+    container_name: devlog-backend
+    restart: always
+    ports:
+      - "8080:8080"
+    volumes:
+      - backend-data:/app/data
+    env_file:
+      - ./backend.env
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+    networks:
+      - devlog
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        - NEXT_PUBLIC_API_URL=http://backend:8080/api
+        - NEXT_PUBLIC_SITE_URL=https://tianxinyv.top
+    container_name: devlog-frontend
+    restart: always
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    environment:
+      - NEXT_PUBLIC_API_URL=http://backend:8080/api
+      - NEXT_PUBLIC_SITE_URL=https://tianxinyv.top
+    networks:
+      - devlog
+
+  nginx:
+    image: nginx:alpine
+    container_name: devlog-nginx
+    restart: always
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+    depends_on:
+      - frontend
+    networks:
+      - devlog
+
+volumes:
+  backend-data:
+
+networks:
+  devlog:

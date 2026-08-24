@@ -8,6 +8,8 @@ import {
 import { useMusic } from "@/components/music-context";
 import AudioVisualizer from "@/components/audio-visualizer";
 import { SITE } from "@/lib/config";
+import { loadAboutConfig, type AboutConfig, DEFAULT_ABOUT } from "@/lib/about";
+import { useState, useEffect } from "react";
 
 function formatTime(seconds: number): string {
   const m = Math.floor(seconds / 60);
@@ -29,6 +31,16 @@ const MODE_NEXT: Record<string, string> = {
 
 export default function HeroSection() {
   const music = useMusic();
+  const [about, setAbout] = useState<AboutConfig>(DEFAULT_ABOUT);
+
+  useEffect(() => {
+    loadAboutConfig().then(setAbout);
+  }, []);
+
+  // Top tech badges from about config (fallback if empty)
+  const badges = about.techStack?.length
+    ? about.techStack.slice(0, 6).map((t) => t.name)
+    : ["Java / Spring Boot", "Next.js / React", "Python", "C", "Docker / Linux", "AI 集成"];
   const {
     tracks,
     currentTrack,
@@ -111,7 +123,7 @@ export default function HeroSection() {
 
           {/* Tech stack badges */}
           <div className="relative z-10 mt-6 flex flex-wrap justify-center lg:justify-start gap-2">
-            {["Java / Spring Boot", "Next.js / React", "Python", "C", "Docker / Linux", "AI 集成"].map((t) => (
+            {badges.map((t) => (
               <span
                 key={t}
                 className="px-3 py-1 rounded-full text-xs font-medium bg-white/[0.05] border border-white/[0.08] text-white/80 hover:text-accent hover:border-accent/40 transition-colors"

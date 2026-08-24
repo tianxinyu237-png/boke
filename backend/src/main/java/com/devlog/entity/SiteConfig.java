@@ -30,6 +30,9 @@ public class SiteConfig {
     @Column(name = "theme_config", columnDefinition = "TEXT")
     private String themeConfig;
 
+    @Column(name = "resume_config", columnDefinition = "TEXT")
+    private String resumeConfig;
+
     @Column(name = "updated_at")
     private java.time.LocalDateTime updatedAt;
 
@@ -60,6 +63,8 @@ public class SiteConfig {
     public void setMusicConfig(String musicConfig) { this.musicConfig = musicConfig; }
     public String getThemeConfig() { return themeConfig; }
     public void setThemeConfig(String themeConfig) { this.themeConfig = themeConfig; }
+    public String getResumeConfig() { return resumeConfig; }
+    public void setResumeConfig(String resumeConfig) { this.resumeConfig = resumeConfig; }
 
     public java.time.LocalDateTime getUpdatedAt() { return updatedAt; }
 }

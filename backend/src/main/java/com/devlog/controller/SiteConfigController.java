@@ -31,7 +31,7 @@ public class SiteConfigController {
     @PutMapping
     public ResponseEntity<Map<String, Object>> updateConfig(@RequestBody Map<String, Object> body) {
         SiteConfig config = repo.findById(1L).orElse(new SiteConfig());
-        String[] fields = {"backgroundConfig","siteConfig","aboutConfig","linksConfig","projectsConfig","musicConfig","themeConfig"};
+        String[] fields = {"backgroundConfig","siteConfig","aboutConfig","linksConfig","projectsConfig","musicConfig","themeConfig","resumeConfig"};
         for (String f : fields) {
             if (body.containsKey(f)) {
                 Object val = body.get(f);
@@ -51,6 +51,7 @@ public class SiteConfigController {
             case "projectsConfig": return c.getProjectsConfig();
             case "musicConfig": return c.getMusicConfig();
             case "themeConfig": return c.getThemeConfig();
+            case "resumeConfig": return c.getResumeConfig();
         }
         return null;
     }
@@ -64,6 +65,7 @@ public class SiteConfigController {
             case "projectsConfig": c.setProjectsConfig(val); break;
             case "musicConfig": c.setMusicConfig(val); break;
             case "themeConfig": c.setThemeConfig(val); break;
+            case "resumeConfig": c.setResumeConfig(val); break;
         }
     }
 }

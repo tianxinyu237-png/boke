@@ -5,17 +5,23 @@ import { motion, useReducedMotion } from "motion/react";
 import { useSiteConfig } from "@/components/site-config-provider";
 import { loadAboutConfig, type AboutConfig, DEFAULT_ABOUT } from "@/lib/about";
 import { loadProjectsConfig, type ProjectsConfig, DEFAULT_PROJECTS } from "@/lib/projects";
+import { loadResumeConfig, type ResumeConfig, DEFAULT_RESUME } from "@/lib/resume";
 
 export default function ResumePage() {
   const reduce = useReducedMotion();
   const { config: SITE } = useSiteConfig();
   const [about, setAbout] = useState<AboutConfig>(DEFAULT_ABOUT);
   const [projects, setProjects] = useState<ProjectsConfig>(DEFAULT_PROJECTS);
+  const [resume, setResume] = useState<ResumeConfig>(DEFAULT_RESUME);
 
   useEffect(() => {
     loadAboutConfig().then(setAbout);
     loadProjectsConfig().then(setProjects);
+    loadResumeConfig().then(setResume);
   }, []);
+
+  const bio = resume.bio || about.bio;
+  const hasEducation = resume.education?.length > 0;
 
   const fadeUp = (delay = 0) =>
     reduce ? {} : {
@@ -34,9 +40,9 @@ export default function ResumePage() {
         <h1 className="text-3xl font-bold tracking-tight text-text-primary">
           {SITE.name}
         </h1>
-        <p className="text-lg text-accent mt-1.5">全能开发程序员</p>
+        <p className="text-lg text-accent mt-1.5">{resume.headline}</p>
         <p className="text-sm text-text-secondary leading-relaxed mt-3 max-w-xl">
-          {about.bio}
+          {bio}
         </p>
         <div className="flex flex-wrap gap-2.5 mt-5">
           {about.contacts.map((c) => {
@@ -129,24 +135,56 @@ export default function ResumePage() {
         </div>
       </motion.section>
 
+      {/* Education timeline (only if configured) */}
+      {hasEducation && (
+        <motion.section {...fadeUp(0.25)} className="mt-12">
+          <h2 className="text-lg font-semibold text-text-primary mb-6 flex items-center gap-2">
+            <span className="text-accent">▍</span>经历
+          </h2>
+          <div className="relative pl-6 border-l border-border">
+            {resume.education.map((e, i) => (
+              <motion.div
+                key={i}
+                initial={reduce ? {} : { opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.3 + i * 0.06 }}
+                className="relative mb-8 last:mb-0"
+              >
+                <span className="absolute -left-[31px] top-1.5 w-3 h-3 rounded-full bg-accent/60 ring-4 ring-accent/10" />
+                {e.period && (
+                  <div className="text-[10px] text-text-muted mb-1 font-mono">{e.period}</div>
+                )}
+                <h3 className="text-sm font-semibold text-text-primary">
+                  {e.title}
+                  {e.org && <span className="text-text-muted font-normal"> · {e.org}</span>}
+                </h3>
+                {e.desc && (
+                  <p className="text-sm text-text-secondary leading-relaxed mt-1">{e.desc}</p>
+                )}
+              </motion.div>
+            ))}
+          </div>
+        </motion.section>
+      )}
+
       {/* Bottom CTA */}
       <motion.div {...fadeUp(0.3)} className="mt-14 glass-card p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
         <div>
-          <div className="text-sm font-semibold text-text-primary">想了解更多?</div>
-          <div className="text-xs text-text-muted mt-1">看项目细节、技术笔记和完整博客</div>
+          <div className="text-sm font-semibold text-text-primary">{resume.ctaTitle}</div>
+          <div className="text-xs text-text-muted mt-1">{resume.ctaDesc}</div>
         </div>
         <div className="flex gap-3 shrink-0">
           <a
             href="/projects"
             className="px-5 py-2 rounded-xl bg-accent text-white text-sm font-medium hover:bg-accent/85 transition-colors"
           >
-            项目作品集
+            {resume.ctaPrimary}
           </a>
           <a
             href="/"
             className="px-5 py-2 rounded-xl bg-bg-mute text-text-secondary text-sm font-medium hover:text-accent transition-colors"
           >
-            回博客首页
+            {resume.ctaSecondary}
           </a>
         </div>
       </motion.div>

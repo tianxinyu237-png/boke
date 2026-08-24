@@ -6,9 +6,10 @@ import { loadLinksConfig, saveLinksConfig, type LinksConfig, DEFAULT_LINKS } fro
 import { loadProjectsConfig, saveProjectsConfig, type ProjectsConfig, DEFAULT_PROJECTS } from "@/lib/projects";
 import { loadMusicConfig, saveMusicConfig, type MusicConfig, DEFAULT_MUSIC } from "@/lib/music";
 import { loadThemeConfig, saveThemeConfig, type ThemeColors, DEFAULT_THEME } from "@/lib/theme";
+import { loadResumeConfig, saveResumeConfig, type ResumeConfig, DEFAULT_RESUME } from "@/lib/resume";
 import { AdminButton, showToast } from "@/components/admin/ui";
 
-type Tab = "about" | "links" | "projects" | "music" | "theme";
+type Tab = "about" | "links" | "projects" | "music" | "theme" | "resume";
 
 const tabMeta: Record<Tab, { label: string; icon: string; desc: string }> = {
   about:    { label: "关于页",   icon: "👤", desc: "个人简介、技术栈、联系方式" },
@@ -16,6 +17,7 @@ const tabMeta: Record<Tab, { label: string; icon: string; desc: string }> = {
   projects: { label: "项目",     icon: "🚀", desc: "项目展示卡片" },
   music:    { label: "音乐",     icon: "🎵", desc: "黑胶播放器曲目列表" },
   theme:    { label: "主题色",   icon: "🎨", desc: "深色/浅色模式配色方案" },
+  resume:   { label: "简历",     icon: "📄", desc: "简历页定位语、经历时间线、CTA 文案" },
 };
 
 const JSON_TEMPLATES: Record<Tab, string> = {
@@ -56,6 +58,17 @@ const JSON_TEMPLATES: Record<Tab, string> = {
     "heroVia": "#22d3ee",
     "heroTo": "#38bdf8"
   }
+}`,
+  resume: `{
+  "headline": "全能开发程序员",
+  "bio": "可选，留空则使用关于页简介",
+  "education": [
+    { "period": "2024 - 至今", "org": "机构/学校", "title": "职位/专业", "desc": "描述..." }
+  ],
+  "ctaTitle": "想了解更多?",
+  "ctaDesc": "看项目细节、技术笔记和完整博客",
+  "ctaPrimary": "项目作品集",
+  "ctaSecondary": "回博客首页"
 }`
 };
 
@@ -66,6 +79,7 @@ export default function ContentManagementPage() {
   const [projectsJson, setProjectsJson] = useState("");
   const [musicJson, setMusicJson] = useState("");
   const [themeJson, setThemeJson] = useState("");
+  const [resumeJson, setResumeJson] = useState("");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -74,6 +88,7 @@ export default function ContentManagementPage() {
     loadProjectsConfig().then((c) => setProjectsJson(JSON.stringify(c, null, 2)));
     loadMusicConfig().then((c) => setMusicJson(JSON.stringify(c, null, 2)));
     loadThemeConfig().then((c) => setThemeJson(JSON.stringify(c, null, 2)));
+    loadResumeConfig().then((c) => setResumeJson(JSON.stringify(c, null, 2)));
   }, []);
 
   const jsonMap: Record<Tab, { val: string; set: (v: string) => void }> = {
@@ -82,6 +97,7 @@ export default function ContentManagementPage() {
     projects: { val: projectsJson, set: setProjectsJson },
     music: { val: musicJson, set: setMusicJson },
     theme: { val: themeJson, set: setThemeJson },
+    resume: { val: resumeJson, set: setResumeJson },
   };
 
   const current = jsonMap[tab];
@@ -108,6 +124,9 @@ export default function ContentManagementPage() {
           break;
         case "theme":
           await saveThemeConfig({ ...DEFAULT_THEME, ...parsed });
+          break;
+        case "resume":
+          await saveResumeConfig({ ...DEFAULT_RESUME, ...parsed });
           break;
       }
       showToast("内容已保存", "success");

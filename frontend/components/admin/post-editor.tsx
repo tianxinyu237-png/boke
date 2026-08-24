@@ -41,15 +41,35 @@ export default function PostEditor({ initial, onSave, mode }: PostEditorProps) {
   const handleTitleChange = (val: string) => {
     setTitle(val);
     if (mode === "create" && !slug) {
-      const auto = val
+      let auto = val
         .toLowerCase()
-        .replace(/[^a-z0-9\s-]/g, "")
+        .replace(/[^a-z0-9\u4e00-\u9fff\s-]/g, "")
         .replace(/\s+/g, "-")
         .replace(/-+/g, "-")
         .replace(/^-|-$/g, "");
+      // Chinese-only titles keep the Chinese; fully-empty fallback to date-based slug
+      if (!auto) auto = `post-${new Date().toISOString().slice(0, 10)}`;
       setSlug(auto);
     }
   };
+
+  // Live slug availability check (create mode only)
+  const [slugStatus, setSlugStatus] = useState<"idle" | "checking" | "available" | "taken">("idle");
+  useEffect(() => {
+    if (mode !== "create" || !slug.trim()) { setSlugStatus("idle"); return; }
+    setSlugStatus("checking");
+    const t = setTimeout(async () => {
+      try {
+        const api = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
+        const res = await fetch(`${api}/posts/check-slug?slug=${encodeURIComponent(slug.trim())}`);
+        if (res.ok) {
+          const data = await res.json();
+          setSlugStatus(data.available ? "available" : "taken");
+        } else setSlugStatus("idle");
+      } catch { setSlugStatus("idle"); }
+    }, 400);
+    return () => clearTimeout(t);
+  }, [slug, mode]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,6 +77,7 @@ export default function PostEditor({ initial, onSave, mode }: PostEditorProps) {
     if (!title.trim()) { setError("请输入标题"); return; }
     if (!slug.trim()) { setError("请输入 slug"); return; }
     if (!content.trim()) { setError("请输入文章内容"); return; }
+    if (slugStatus === "taken") { setError("该 slug 已被占用,请换一个"); return; }
 
     const tags = tagsInput.split(",").map((t) => t.trim()).filter(Boolean);
     setSaving(true);
@@ -137,7 +158,18 @@ export default function PostEditor({ initial, onSave, mode }: PostEditorProps) {
           placeholder="my-article-slug"
           className="font-mono"
         />
-        <p className="text-text-muted text-[10px] -mt-3">访问地址: /posts/{slug || "..."}</p>
+        <p className="text-text-muted text-[10px] -mt-3">
+          访问地址: /posts/{slug || "..."}
+          {mode === "create" && slug && slugStatus === "checking" && (
+            <span className="ml-2 text-text-muted">检查中...</span>
+          )}
+          {mode === "create" && slug && slugStatus === "available" && (
+            <span className="ml-2 text-emerald-400">✓ 可用</span>
+          )}
+          {mode === "create" && slug && slugStatus === "taken" && (
+            <span className="ml-2 text-red-400">✗ 已被占用,请换一个</span>
+          )}
+        </p>
 
         <div className="grid grid-cols-2 gap-4">
           <AdminInput

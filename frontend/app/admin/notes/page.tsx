@@ -94,7 +94,7 @@ export default function NotesPage() {
   useEffect(() => { loadNotes(); loadFolders(); }, [loadNotes, loadFolders]);
 
   const saveNote = useCallback(async () => {
-    if (!title.trim()) return;
+    if (!title.trim()) { showToast("请先填写笔记标题", "error"); return; }
     setSaving(true);
     try {
       const body: any = { title: title.trim(), content, folder: folder.trim() || null, noteType };
@@ -123,12 +123,12 @@ export default function NotesPage() {
     return () => window.removeEventListener("keydown", handler);
   }, [saveNote]);
 
-  // Auto-save
+  // Auto-save (also works for brand-new notes once a title is set)
   useEffect(() => {
-    if (!dirty || !activeId) return;
+    if (!dirty || !title.trim()) return;
     const t = setTimeout(() => saveNote(), 2000);
     return () => clearTimeout(t);
-  }, [dirty, activeId, saveNote]);
+  }, [dirty, title, saveNote]);
 
   function selectNote(note: NoteData) {
     setActiveId(note.id!);
@@ -357,6 +357,13 @@ export default function NotesPage() {
             <button onClick={() => exportNote("md")} className="text-[10px] text-text-muted hover:text-text-secondary border border-border rounded-lg px-1.5 py-0.5 transition-colors">.md</button>
             <button onClick={() => exportNote("html")} className="text-[10px] text-text-muted hover:text-text-secondary border border-border rounded-lg px-1.5 py-0.5 transition-colors">.html</button>
           </div>
+          <button
+            onClick={saveNote}
+            disabled={saving}
+            className="px-3 py-1 rounded-lg text-xs font-medium bg-accent text-white hover:bg-accent/80 disabled:opacity-40 transition-colors shrink-0"
+          >
+            {saving ? "保存中..." : "保存"}
+          </button>
           {activeId && (
             <button onClick={() => handleDeleteClick(activeId, title)} className="text-xs text-text-muted hover:text-red-400 transition-colors shrink-0">删除</button>
           )}

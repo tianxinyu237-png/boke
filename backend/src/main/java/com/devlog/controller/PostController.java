@@ -110,6 +110,13 @@ public class PostController {
         return postRepository.findAllTags();
     }
 
+    /** GET /api/posts/check-slug?slug=xxx - Check slug availability (exact path wins over {slug}) */
+    @GetMapping("/posts/check-slug")
+    public ResponseEntity<Map<String, Object>> checkSlug(@RequestParam String slug) {
+        boolean exists = postRepository.findBySlug(slug).isPresent();
+        return ResponseEntity.ok(Map.of("available", !exists));
+    }
+
     // ── Create ────────────────────────────────────────
 
     /** POST /api/posts - Create a new post */

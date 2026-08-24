@@ -21,7 +21,7 @@ public class SiteConfigController {
     public ResponseEntity<Map<String, Object>> getConfig() {
         SiteConfig config = repo.findById(1L).orElse(null);
         Map<String, Object> result = new java.util.HashMap<>();
-        String[] fields = {"backgroundConfig","siteConfig","aboutConfig","linksConfig","projectsConfig","musicConfig","themeConfig"};
+        String[] fields = {"backgroundConfig","siteConfig","aboutConfig","linksConfig","projectsConfig","musicConfig","themeConfig","resumeConfig"};
         for (String f : fields) {
             result.put(f, config != null ? getField(config, f) : null);
         }

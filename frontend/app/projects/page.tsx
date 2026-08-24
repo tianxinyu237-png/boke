@@ -24,7 +24,10 @@ export default function ProjectsPage() {
       </motion.div>
 
       <div className="space-y-4">
-        {cfg.projects.map((p, i) => (
+        {cfg.projects.map((p, i) => {
+          const isOnline = p.url && p.url.startsWith("http");
+          const isWip = !isOnline && /进行中|规划|开发中|TODO/i.test(p.desc);
+          return (
           <motion.a
             key={p.name}
             href={p.url || "#"}
@@ -39,11 +42,17 @@ export default function ProjectsPage() {
               <h3 className="text-base font-semibold text-text-primary group-hover:text-accent transition-colors">
                 {p.name}
               </h3>
-              {p.stars && (
-                <span className="text-xs text-text-muted flex items-center gap-1 shrink-0">
-                  ⭐ {p.stars}
-                </span>
-              )}
+              <span
+                className={`text-[10px] px-2 py-0.5 rounded-full shrink-0 ml-3 ${
+                  isOnline
+                    ? "bg-emerald-500/15 text-emerald-400"
+                    : isWip
+                    ? "bg-amber-500/15 text-amber-400"
+                    : "bg-accent/10 text-accent"
+                }`}
+              >
+                {isOnline ? "线上" : isWip ? "进行中" : "项目"}
+              </span>
             </div>
             <p className="text-sm text-text-secondary mb-3">{p.desc}</p>
             <div className="flex flex-wrap gap-1.5">
@@ -54,7 +63,8 @@ export default function ProjectsPage() {
               ))}
             </div>
           </motion.a>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

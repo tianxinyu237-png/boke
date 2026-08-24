@@ -92,16 +92,6 @@ export default function HeroSection() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, ease: [0.25, 0.46, 0.45, 0.94] }}
         >
-          {/* 局部深色渐变层：提升文字在背景图上的可读性 */}
-          <div
-            aria-hidden
-            className="absolute -inset-x-6 -inset-y-4 rounded-3xl pointer-events-none"
-            style={{
-              background:
-                "linear-gradient(180deg, rgba(8,8,18,0.80) 0%, rgba(8,8,18,0.62) 60%, rgba(8,8,18,0.35) 100%)",
-              zIndex: 0,
-            }}
-          />
           <h1
             className="relative z-10 text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight leading-none"
             style={{
@@ -118,6 +108,35 @@ export default function HeroSection() {
             {SITE.description}
           </p>
           <p className="relative z-10 mt-2 text-base sm:text-lg text-white">{SITE.tagline}</p>
+
+          {/* Tech stack badges */}
+          <div className="relative z-10 mt-6 flex flex-wrap justify-center lg:justify-start gap-2">
+            {["Java / Spring Boot", "Next.js / React", "Python", "C", "Docker / Linux", "AI 集成"].map((t) => (
+              <span
+                key={t}
+                className="px-3 py-1 rounded-full text-xs font-medium bg-white/[0.05] border border-white/[0.08] text-white/80 hover:text-accent hover:border-accent/40 transition-colors"
+              >
+                {t}
+              </span>
+            ))}
+          </div>
+
+          {/* CTA buttons */}
+          <div className="relative z-10 mt-7 flex items-center gap-3">
+            <a
+              href="/projects"
+              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-accent text-white text-sm font-semibold shadow-lg shadow-accent/25 hover:bg-accent/85 hover:-translate-y-0.5 transition-all"
+            >
+              查看项目
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M3 8h10M9 4l4 4-4 4" /></svg>
+            </a>
+            <a
+              href="/about"
+              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-white/[0.05] border border-white/[0.1] text-white/90 text-sm font-medium hover:border-accent/40 hover:text-accent hover:-translate-y-0.5 transition-all"
+            >
+              关于我
+            </a>
+          </div>
 
           {/* Mini player controls */}
           <div className="relative z-10 mt-8 flex items-center gap-2.5 px-4 py-2.5 rounded-full bg-white/[0.04] backdrop-blur-md border border-white/[0.06]">
@@ -284,7 +303,7 @@ export default function HeroSection() {
                         className="absolute inset-[28%] rounded-full flex flex-col items-center justify-center"
                         style={{
                           background:
-                            "linear-gradient(135deg, #c084fc 0%, #7DCDE8 50%, #f093fb 100%)",
+                            "linear-gradient(135deg, #c084fc 0%, #a78bfa 50%, #7c5cd6 100%)",
                           boxShadow:
                             "0 0 24px rgba(192,132,252,0.3), inset 0 1px 0 rgba(255,255,255,0.15)",
                         }}

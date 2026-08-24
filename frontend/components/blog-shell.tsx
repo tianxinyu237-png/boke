@@ -13,9 +13,11 @@ const navLinks = [
   { href: "/", label: "首页", icon: "house" },
   { href: "/sum", label: "归档", icon: "box-archive" },
   { href: "/categories", label: "分类", icon: "folder" },
+  { href: "/projects", label: "项目", icon: "code" },
   { href: "/notes", label: "笔记", icon: "book" },
   { href: "/links", label: "友链", icon: "link" },
   { href: "/moments", label: "碎碎念", icon: "chat" },
+  { href: "/resume", label: "简历", icon: "file-text" },
   { href: "/about", label: "关于", icon: "user" },
   { href: "/search", label: "搜索", icon: "magnifying-glass" },
 ];
@@ -78,6 +80,21 @@ function NavIcon({ name }: { name: string }) {
       {name === "chat" && (
         <>
           <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
+        </>
+      )}
+      {name === "code" && (
+        <>
+          <polyline points="16 18 22 12 16 6" />
+          <polyline points="8 6 2 12 8 18" />
+        </>
+      )}
+      {name === "file-text" && (
+        <>
+          <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+          <path d="M14 2v6h6" />
+          <path d="M16 13H8" />
+          <path d="M16 17H8" />
+          <path d="M10 9H8" />
         </>
       )}
     </svg>

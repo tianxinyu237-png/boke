@@ -1,6 +1,7 @@
 import { getPosts, type PaginatedPosts } from "@/lib/posts";
 import { PostListClient } from "@/components/post-list-client";
 import HeroSection from "@/components/hero-section";
+import FeaturedProjects from "@/components/featured-projects";
 import VinylPlayer from "@/components/vinyl-player";
 
 export const dynamic = "force-dynamic";
@@ -30,6 +31,9 @@ export default async function HomePage() {
     <>
       {/* Hero section with embedded music player */}
       <HeroSection />
+
+      {/* Featured projects */}
+      <FeaturedProjects />
 
       {/* Post list */}
       <div className="max-w-3xl mx-auto px-4 pb-24 pt-4">

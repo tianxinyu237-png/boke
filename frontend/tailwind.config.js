@@ -21,8 +21,8 @@ module.exports = {
         "border-hover": "rgb(var(--color-border-hover) / var(--color-border-hover-alpha))",
       },
       fontFamily: {
-        sans: ["var(--font-geist)", "system-ui", "sans-serif"],
-        mono: ["var(--font-geist-mono)", "monospace"],
+        sans: ["var(--font-geist)", "-apple-system", "PingFang SC", "Microsoft YaHei", "Noto Sans SC", "system-ui", "sans-serif"],
+        mono: ["var(--font-geist-mono)", "ui-monospace", "SFMono-Regular", "monospace"],
       },
       transitionTimingFunction: {
         "out-expo": "cubic-bezier(0.16, 1, 0.3, 1)",

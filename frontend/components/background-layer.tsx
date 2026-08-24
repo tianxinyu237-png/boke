@@ -5,8 +5,9 @@ import { usePathname } from "next/navigation";
 import { loadBgConfig, saveBgConfig, loadBgConfigHybrid, type BackgroundConfig } from "@/lib/background";
 
 // 全局遮罩渐变 —— 与背景图合并进 body 的同一个 background 栈 (单图层)
+// 方案A：淡化遮罩，让背景插画清晰可见（原 0.84 压得太暗，背景几乎看不见）
 const VEIL_GRADIENT =
-  "linear-gradient(180deg, rgba(10,10,22,0.84) 0%, rgba(10,10,22,0.74) 40%, rgba(10,10,22,0.80) 100%)";
+  "linear-gradient(180deg, rgba(10,10,22,0.52) 0%, rgba(10,10,22,0.44) 50%, rgba(10,10,22,0.56) 100%)";
 
 export default function BackgroundLayer() {
   const pathname = usePathname();

@@ -1,12 +1,16 @@
 export interface TechStack {
   name: string;
-  desc: string;
+  desc?: string;
+  level?: number;
+  category?: string;
 }
 
 export interface Contact {
   label: string;
-  href: string;
-  icon: string;
+  href?: string;
+  url?: string;
+  icon?: string;
+  type?: string;
 }
 
 export interface AboutConfig {

@@ -41,6 +41,13 @@ export async function loadProjectsConfig(): Promise<ProjectsConfig> {
       const parsed = typeof data.projectsConfig === "string"
         ? JSON.parse(data.projectsConfig)
         : data.projectsConfig;
+      // Normalize: backend may store `description`, frontend uses `desc`
+      if (Array.isArray(parsed.projects)) {
+        parsed.projects = parsed.projects.map((p: any) => ({
+          ...p,
+          desc: p.desc ?? p.description ?? "",
+        }));
+      }
       return { ...DEFAULT_PROJECTS, ...parsed };
     }
   } catch {}

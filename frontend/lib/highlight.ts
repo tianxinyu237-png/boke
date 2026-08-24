@@ -62,12 +62,16 @@ export async function highlightCodeBlocks(html: string): Promise<string> {
     try {
       const highlighted = await codeToHtml(code, {
         lang,
-        theme: "github-dark",
+        themes: { dark: "github-dark", light: "github-light" },
+        defaultColor: false,
       });
+      // Tag the <pre> with its language so CSS can render a language badge
+      const langAttr = lang === "text" ? "" : ` data-language="${lang}"`;
+      const tagged = highlighted.replace("<pre ", `<pre${langAttr} `);
       replacements.push({
         index: match.index,
         original: match[0],
-        highlighted,
+        highlighted: tagged,
       });
     } catch {
       // fallback: leave as-is

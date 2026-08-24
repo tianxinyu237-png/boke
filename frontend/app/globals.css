@@ -15,20 +15,20 @@
   --color-surface: 255 255 255;
   --color-surface-alpha: 0.04;
   --color-text: 255 255 255;
-  --color-text-secondary: 226 226 226;
-  --color-text-secondary-alpha: 1;
-  --color-text-muted: 226 226 226;
-  --color-text-muted-alpha: 1;
+  --color-text-secondary: 255 255 255;
+  --color-text-secondary-alpha: 0.72;
+  --color-text-muted: 255 255 255;
+  --color-text-muted-alpha: 0.45;
   --color-accent: 192 132 252;
   --color-accent-secondary: 167 139 250;
   --color-border: 255 255 255;
   --color-border-alpha: 0.08;
   --color-border-hover: 255 255 255;
   --color-border-hover-alpha: 0.15;
-  /* hero gradient */
-  --hero-from: #7DCDE8;
-  --hero-via: #c084fc;
-  --hero-to: #f093fb;
+  /* hero gradient — 收敛为紫色系（原蓝紫粉为 AI 渐变指纹） */
+  --hero-from: #c084fc;
+  --hero-via: #a78bfa;
+  --hero-to: #7c5cd6;
 }
 
 /* Light mode override */
@@ -40,9 +40,9 @@
   --color-surface-alpha: 0.04;
   --color-text: 26 26 26;
   --color-text-secondary: 0 0 0;
-  --color-text-secondary-alpha: 0.6;
+  --color-text-secondary-alpha: 0.65;
   --color-text-muted: 0 0 0;
-  --color-text-muted-alpha: 0.4;
+  --color-text-muted-alpha: 0.42;
   --color-accent: 14 165 233;
   --color-accent-secondary: 56 189 248;
   --color-border: 0 0 0;
@@ -98,7 +98,7 @@
     border-color: rgb(var(--color-accent) / 0.4);
     transform: translateY(-2px);
     box-shadow:
-      0 8px 30px rgba(0, 0, 0, 0.18),
+      0 8px 30px rgb(192 132 252 / 0.10),
       0 0 0 1px rgb(var(--color-accent) / 0.1);
   }
   .light .glass-card:hover {
@@ -110,7 +110,7 @@
   /* ── Prose (article body) ── */
   .prose {
     color: rgb(var(--color-text-secondary) / var(--color-text-secondary-alpha));
-    line-height: 1.85;
+    line-height: 1.75;
   }
   
 /* ── TOC anchor offset (sticky header is h-14 = 56px) ── */
@@ -228,6 +228,81 @@
     border-color: rgb(var(--color-border) / var(--color-border-alpha));
     margin: 3rem 0;
   }
+  .prose table {
+    width: 100%;
+    margin-bottom: 2rem;
+    font-size: 0.875rem;
+    border-collapse: collapse;
+  }
+  .prose th {
+    text-align: left;
+    font-weight: 600;
+    color: rgb(var(--color-text));
+    background: rgb(var(--color-bg-mute) / 0.5);
+    padding: 0.6rem 0.9rem;
+    border: 1px solid rgb(var(--color-border) / var(--color-border-alpha));
+  }
+  .prose td {
+    padding: 0.6rem 0.9rem;
+    border: 1px solid rgb(var(--color-border) / var(--color-border-alpha));
+    color: rgb(var(--color-text-secondary) / var(--color-text-secondary-alpha));
+  }
+  .prose tr:nth-child(even) td {
+    background: rgb(var(--color-bg-mute) / 0.25);
+  }
+  .prose ul.contains-task-list {
+    list-style: none;
+    padding-left: 0.25rem;
+  }
+  .prose .task-list-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .prose .task-list-item input[type="checkbox"] {
+    accent-color: rgb(var(--color-accent));
+  }
+  .prose del {
+    color: rgb(var(--color-text-muted) / var(--color-text-muted-alpha));
+  }
+}
+
+/* ── Shiki dual-theme code blocks (inline CSS vars emitted by shiki) ── */
+pre.shiki {
+  background-color: var(--shiki-dark-bg);
+  color: var(--shiki-dark);
+  position: relative;
+}
+pre.shiki span {
+  color: var(--shiki-dark);
+}
+.light pre.shiki {
+  background-color: var(--shiki-light-bg);
+  color: var(--shiki-light);
+}
+.light pre.shiki span {
+  color: var(--shiki-light);
+}
+/* Language badge */
+pre.shiki[data-language] {
+  padding-top: 2.4rem;
+}
+pre.shiki[data-language]::before {
+  content: attr(data-language);
+  position: absolute;
+  top: 0.6rem;
+  left: 0.9rem;
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgb(var(--color-text-muted) / 0.55);
+  background: rgb(var(--color-bg-mute) / 0.55);
+  padding: 0.15rem 0.5rem;
+  border-radius: 0.375rem;
+  z-index: 1;
+  user-select: none;
+  pointer-events: none;
 }
 
 /* Scrollbar */
@@ -269,59 +344,17 @@ body.has-custom-bg .backdrop-blur-2xl {
   --tw-backdrop-blur: blur(4px);
 }
 
-/* ══ 全局可读性修复：内容容器毛玻璃隔离层 (2026-08-01) ══ */
-/* 所有页面的主体内容容器（max-w-* mx-auto，PageTransition 包装层直接子元素）
-   统一加半透明深色底 + 毛玻璃，文字不再直接叠在全屏插画背景上。
-   hero 全宽 section 与 fixed 浮动组件不含 max-w- 类，天然不受影响。 */
+/* ══ 内容容器实色底（方案A 2026-08-15）══
+   背景插画清晰可见（遮罩已淡化），正文靠实色深色容器保证可读。
+   只给主体容器实色底，不再强制文字颜色/阴影 —— 文字层级由
+   text-primary/secondary/muted 变量控制。 */
 .page-transition-wrap > div[class*="max-w-"] {
-  /* 半透明深色底隔离层 —— 不用 backdrop-filter：
-     大面积 backdrop-filter + 背景图会触发浏览器 GPU 合成降采样，
-     导致整个页面（含文字）变模糊。背景图本身是高清 4K，保持锐利。 */
-  background-color: rgba(0, 0, 0, 0.56);
-  border-radius: 12px;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.18);
+  background-color: rgb(var(--color-bg));
+  border-radius: 16px;
+  box-shadow: 0 12px 40px rgb(0 0 0 / 0.28);
 }
-
-/* 毛玻璃容器内的正文文字提亮 + 文字阴影，保证对比度 */
-.page-transition-wrap > div[class*="max-w-"] p,
-.page-transition-wrap > div[class*="max-w-"] li,
-.page-transition-wrap > div[class*="max-w-"] h1,
-.page-transition-wrap > div[class*="max-w-"] h2,
-.page-transition-wrap > div[class*="max-w-"] h3,
-.page-transition-wrap > div[class*="max-w-"] h4,
-.page-transition-wrap > div[class*="max-w-"] time {
-  color: #ffffff;
-  text-shadow: 0px 1px 4px rgba(0, 0, 0, 0.9);
-}
-/* 链接保留主题紫色，仅加阴影保证可读 */
-.page-transition-wrap > div[class*="max-w-"] a {
-  text-shadow: 0px 1px 4px rgba(0, 0, 0, 0.9);
-}
-.page-transition-wrap > div[class*="max-w-"] a:hover {
-  text-decoration-color: currentColor;
-}
-
-/* 次要文字/日期标签：浅灰 */
-.page-transition-wrap > div[class*="max-w-"] .text-text-muted,
-.page-transition-wrap > div[class*="max-w-"] .text-text-secondary,
-.page-transition-wrap > div[class*="max-w-"] time,
-.page-transition-wrap > div[class*="max-w-"] .text-sm {
-  color: #e2e2e2 !important;
-}
-
-/* 亮色模式下毛玻璃更淡，避免过黑 */
 .light .page-transition-wrap > div[class*="max-w-"] {
-  background-color: rgba(255, 255, 255, 0.6);
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
-}
-.light .page-transition-wrap > div[class*="max-w-"] p,
-.light .page-transition-wrap > div[class*="max-w-"] li,
-.light .page-transition-wrap > div[class*="max-w-"] h1,
-.light .page-transition-wrap > div[class*="max-w-"] h2,
-.light .page-transition-wrap > div[class*="max-w-"] h3,
-.light .page-transition-wrap > div[class*="max-w-"] h4 {
-  color: #1a1a1a;
-  text-shadow: none;
+  box-shadow: 0 12px 40px rgb(0 0 0 / 0.08);
 }
 /* 导航横向滚动时不显示滚动条 (移动端) */
 .no-scrollbar::-webkit-scrollbar {
@@ -330,17 +363,5 @@ body.has-custom-bg .backdrop-blur-2xl {
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
-}
-
-.light .page-transition-wrap > div[class*="max-w-"] .text-text-muted,
-.light .page-transition-wrap > div[class*="max-w-"] .text-text-secondary,
-.light .page-transition-wrap > div[class*="max-w-"] time {
-  color: #555555 !important;
-}
-
-/* 首页文章卡片在毛玻璃容器内的 hover 效果微调 */
-.page-transition-wrap > div[class*="max-w-"] .glass-card {
-  background: rgb(var(--color-bg) / 0.65);
-  border-color: rgb(var(--color-border) / 0.15);
 }
 

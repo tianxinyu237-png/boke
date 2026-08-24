@@ -10,13 +10,21 @@ interface MarkdownEditorProps {
 }
 
 // Toolbar buttons
-const tools = [
+interface ToolDef {
+  label: string;
+  insert: string;
+  prefix?: boolean;
+  wrap?: number | [string, string];
+}
+
+const tools: ToolDef[] = [
   { label: "H2", insert: "## ", prefix: true },
   { label: "H3", insert: "### ", prefix: true },
   { label: "B", insert: "****", wrap: 2 },
   { label: "I", insert: "**", wrap: 1 },
   { label: "`", insert: "``", wrap: 1 },
-  { label: "```", insert: "```\n\n```", wrap: 4 },
+  { label: "```c", insert: "```c\n\n```", wrap: ["```c\n", "\n```"] },
+  { label: "```", insert: "```\n\n```", wrap: ["```\n", "\n```"] },
   { label: ">", insert: "> ", prefix: true },
   { label: "-", insert: "- ", prefix: true },
   { label: "1.", insert: "1. ", prefix: true },
@@ -100,6 +108,16 @@ export default function MarkdownEditor({
       const insert = linePrefix ? "\n" + tool.insert : tool.insert;
       newText = before + insert + selected + after;
       cursorPos = start + insert.length;
+    } else if (Array.isArray(tool.wrap)) {
+      // Asymmetric wrapper: [before, after] — e.g. ["```c\n", "\n```"]
+      const [wBefore, wAfter] = tool.wrap;
+      if (selected) {
+        newText = before + wBefore + selected + wAfter + after;
+        cursorPos = start + wBefore.length + selected.length + wAfter.length;
+      } else {
+        newText = before + tool.insert + after;
+        cursorPos = start + wBefore.length;
+      }
     } else if (tool.wrap && tool.wrap > 0) {
       const wrapChar = tool.insert.substring(0, tool.wrap);
       if (selected) {

@@ -17,11 +17,12 @@ export async function middleware(req: NextRequest) {
   const referer = req.headers.get("referer") || "";
 
   try {
-    // 用请求自身 origin 拼后端地址:线上经 nginx→rewrite 到 backend,本机 dev 直通 8080
-    // 注意:不要用 process.env 取地址 — edge runtime 编译时 env 替换不可靠(实测被替换成 undefined)
+    // 坑:req.nextUrl.origin 在 next start 下固定返回 http://localhost:3000(Next 14.2.35 行为),
+    // 必须用 Host header 拼地址 → 线上经 nginx → /api/ 直连 backend,本机 dev 经 rewrites 通 8080
+    const host = req.headers.get("host") || "localhost:3000";
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 2000);
-    const res = await fetch(`${req.nextUrl.origin}/api/visitors/record`, {
+    const res = await fetch(`http://${host}/api/visitors/record`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

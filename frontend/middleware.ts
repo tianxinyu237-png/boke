@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
-// 构建时注入:容器内 http://backend:8080/api;本机 dev 用 localhost
-const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
+// next.config env 构建时内联(edge runtime 读不到 NEXT_PUBLIC_*);本机 dev 用 localhost
+const API = process.env.API_URL || "http://localhost:8080/api";
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;

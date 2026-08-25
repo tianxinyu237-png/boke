@@ -25,7 +25,7 @@ export default function ProjectDetailPage() {
       setLoading(false);
       if (found?.longDesc) {
         try {
-          const res = await fetch("/api/render-markdown", {
+          const res = await fetch("/render-markdown", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ md: found.longDesc }),

@@ -78,6 +78,21 @@ export function IconProject({ className = "w-4 h-4" }: { className?: string }) {
   );
 }
 
+export function IconVisitors({ className = "w-4 h-4" }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+      <path d="M19.07 4.93A10 10 0 0 0 6.99 3.34" />
+      <path d="M4 6h.01" />
+      <path d="M2.29 9.62a10 10 0 1 0 19.02-1.27" />
+      <path d="M16.24 7.76a6 6 0 1 0-8.01 8.91" />
+      <path d="M12 18h.01" />
+      <path d="M17.99 11.66a6 6 0 0 1-2.22 4.9" />
+      <circle cx="12" cy="12" r="2" />
+      <path d="m13.41 10.59 5.66-5.66" />
+    </svg>
+  );
+}
+
 export function IconContent({ className = "w-4 h-4" }: { className?: string }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
@@ -331,6 +346,7 @@ const BREADCRUMB_MAP: Record<string, string> = {
   "/admin/fonts": "字体设置",
   "/admin/settings": "站点设置",
   "/admin/content": "内容管理",
+  "/admin/visitors": "访客统计",
   "/admin/projects": "项目管理",
   "/admin/categories": "分类管理",
   "/admin/photos": "相册管理",

@@ -47,6 +47,12 @@ public class ApiAuthFilter extends OncePerRequestFilter {
             return;
         }
 
+        // Visitor record — public endpoint (called by frontend middleware)
+        if (path.equals("/api/visitors/record")) {
+            chain.doFilter(request, response);
+            return;
+        }
+
         // Write operations require X-Api-Key
         String apiKey = request.getHeader("X-Api-Key");
         if (adminToken != null && adminToken.equals(apiKey)) {

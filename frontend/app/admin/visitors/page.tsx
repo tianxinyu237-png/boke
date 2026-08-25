@@ -63,10 +63,10 @@ export default function AdminVisitorsPage() {
   const refresh = useCallback(async () => {
     try {
       const [ov, rk, rc, bl] = await Promise.all([
-        getJSON("/api/visitors/overview"),
-        getJSON("/api/visitors/rank"),
-        getJSON("/api/visitors/recent"),
-        getJSON("/api/visitors/blocked"),
+        getJSON("/visitors/overview"),
+        getJSON("/visitors/rank"),
+        getJSON("/visitors/recent"),
+        getJSON("/visitors/blocked"),
       ]);
       setOverview(ov);
       setRank(rk);
@@ -99,7 +99,7 @@ export default function AdminVisitorsPage() {
     if (detailIp === ip) { setDetailIp(null); return; }
     setDetailIp(ip);
     try {
-      setDetailLogs(await getJSON(`/api/visitors/recent?ip=${encodeURIComponent(ip)}`));
+      setDetailLogs(await getJSON(`/visitors/recent?ip=${encodeURIComponent(ip)}`));
     } catch {
       setDetailLogs([]);
     }
@@ -107,7 +107,7 @@ export default function AdminVisitorsPage() {
 
   async function doBlock() {
     if (!blockTarget) return;
-    const res = await fetch(`${API}/api/visitors/block`, {
+    const res = await fetch(`${API}/visitors/block`, {
       method: "POST",
       headers: authHeaders(),
       body: JSON.stringify({ ip: blockTarget.ip, reason: "手动封禁", hours: 24 }),
@@ -122,7 +122,7 @@ export default function AdminVisitorsPage() {
   }
 
   async function doUnblock(ip: string) {
-    const res = await fetch(`${API}/api/visitors/unblock`, {
+    const res = await fetch(`${API}/visitors/unblock`, {
       method: "POST",
       headers: authHeaders(),
       body: JSON.stringify({ ip }),

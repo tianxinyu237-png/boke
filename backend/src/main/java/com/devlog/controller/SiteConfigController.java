@@ -21,7 +21,7 @@ public class SiteConfigController {
     public ResponseEntity<Map<String, Object>> getConfig() {
         SiteConfig config = repo.findById(1L).orElse(null);
         Map<String, Object> result = new java.util.HashMap<>();
-        String[] fields = {"backgroundConfig","siteConfig","aboutConfig","linksConfig","projectsConfig","musicConfig","themeConfig","resumeConfig"};
+        String[] fields = {"backgroundConfig","siteConfig","aboutConfig","linksConfig","projectsConfig","musicConfig","themeConfig","resumeConfig","oneLinerConfig"};
         for (String f : fields) {
             result.put(f, config != null ? getField(config, f) : null);
         }
@@ -31,7 +31,7 @@ public class SiteConfigController {
     @PutMapping
     public ResponseEntity<Map<String, Object>> updateConfig(@RequestBody Map<String, Object> body) {
         SiteConfig config = repo.findById(1L).orElse(new SiteConfig());
-        String[] fields = {"backgroundConfig","siteConfig","aboutConfig","linksConfig","projectsConfig","musicConfig","themeConfig","resumeConfig"};
+        String[] fields = {"backgroundConfig","siteConfig","aboutConfig","linksConfig","projectsConfig","musicConfig","themeConfig","resumeConfig","oneLinerConfig"};
         for (String f : fields) {
             if (body.containsKey(f)) {
                 Object val = body.get(f);
@@ -52,6 +52,7 @@ public class SiteConfigController {
             case "musicConfig": return c.getMusicConfig();
             case "themeConfig": return c.getThemeConfig();
             case "resumeConfig": return c.getResumeConfig();
+            case "oneLinerConfig": return c.getOneLinerConfig();
         }
         return null;
     }
@@ -66,6 +67,7 @@ public class SiteConfigController {
             case "musicConfig": c.setMusicConfig(val); break;
             case "themeConfig": c.setThemeConfig(val); break;
             case "resumeConfig": c.setResumeConfig(val); break;
+            case "oneLinerConfig": c.setOneLinerConfig(val); break;
         }
     }
 }

@@ -72,6 +72,7 @@ public class PostController {
             m.put("excerpt", p.getExcerpt());
             m.put("date", p.getDate());
             m.put("readTime", p.getReadTime());
+            m.put("likeCount", p.getLikeCount());
             m.put("coverImage", p.getCoverImage());
             m.put("pinned", p.isPinned());
             m.put("tags", p.getTags());
@@ -115,6 +116,18 @@ public class PostController {
     public ResponseEntity<Map<String, Object>> checkSlug(@RequestParam String slug) {
         boolean exists = postRepository.findBySlug(slug).isPresent();
         return ResponseEntity.ok(Map.of("available", !exists));
+    }
+
+    // ── Like ──────────────────────────────────────────
+
+    /** POST /api/posts/{id}/like - Rocket like (public, dedupe via frontend localStorage) */
+    @PostMapping("/posts/{id}/like")
+    public ResponseEntity<?> likePost(@PathVariable Long id) {
+        return postRepository.findById(id).map(p -> {
+            p.setLikeCount(p.getLikeCount() + 1);
+            postRepository.save(p);
+            return ResponseEntity.ok(Map.of("likeCount", p.getLikeCount()));
+        }).orElse(ResponseEntity.notFound().build());
     }
 
     // ── Create ────────────────────────────────────────

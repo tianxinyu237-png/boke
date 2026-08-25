@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import type { Post } from "@/components/post-card";
 import { ScrollProgress, BackToTop } from "@/components/article-tools";
@@ -143,6 +144,9 @@ export function ArticleView({
                 返回首页
               </a>
             </div>
+
+            {/* 火箭点赞 */}
+            <RocketLike postId={post.id} slug={post.slug} initialCount={post.likeCount ?? 0} />
           </motion.div>
           <CommentSection />
         </article>
@@ -156,5 +160,60 @@ export function ArticleView({
 
       <BackToTop />
     </>
+  );
+}
+
+// ── 火箭点赞(防重复靠 localStorage) ──
+function RocketLike({ postId, slug, initialCount }: { postId: string; slug: string; initialCount: number }) {
+  const [count, setCount] = useState(initialCount);
+  const [liked, setLiked] = useState(false);
+  const [flying, setFlying] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    try {
+      const map = JSON.parse(localStorage.getItem("rocket_likes") || "{}");
+      if (map[slug]) setLiked(true);
+    } catch {}
+  }, [slug]);
+
+  async function like() {
+    if (liked || busy) return;
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/posts/${postId}/like`, { method: "POST" });
+      if (res.ok) {
+        const data = await res.json();
+        setCount(data.likeCount ?? count + 1);
+        setLiked(true);
+        setFlying(true);
+        try {
+          const map = JSON.parse(localStorage.getItem("rocket_likes") || "{}");
+          map[slug] = true;
+          localStorage.setItem("rocket_likes", JSON.stringify(map));
+        } catch {}
+        setTimeout(() => setFlying(false), 1200);
+      }
+    } catch {}
+    setBusy(false);
+  }
+
+  return (
+    <div className="mt-8 flex justify-center">
+      <button
+        onClick={like}
+        disabled={liked || busy}
+        className={`relative inline-flex items-center gap-2.5 px-6 py-3 rounded-full text-sm font-medium border transition-all duration-300 ${
+          liked
+            ? "bg-accent/15 border-accent/40 text-accent"
+            : "bg-bg-soft border-border text-text-secondary hover:border-accent/40 hover:text-accent hover:scale-[1.03] active:scale-95"
+        } disabled:cursor-default`}
+      >
+        <span className={`inline-block transition-transform duration-300 ${flying ? "scale-150 -translate-y-1" : ""}`}>
+          {liked ? "🚀" : "🚀"}
+        </span>
+        {liked ? `已送上天 · ${count}` : `送这篇上天 · ${count}`}
+      </button>
+    </div>
   );
 }

@@ -53,6 +53,12 @@ public class ApiAuthFilter extends OncePerRequestFilter {
             return;
         }
 
+        // Post like — public endpoint (visitor action)
+        if (path.matches("/api/posts/\\d+/like")) {
+            chain.doFilter(request, response);
+            return;
+        }
+
         // Write operations require X-Api-Key
         String apiKey = request.getHeader("X-Api-Key");
         if (adminToken != null && adminToken.equals(apiKey)) {

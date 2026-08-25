@@ -110,7 +110,7 @@ export default function WelcomeOverlay() {
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.7, duration: 0.6 }}
               >
-                嗨，欢迎来到
+                {greetingByHour()},陌生人
               </motion.p>
 
               <motion.h1
@@ -150,4 +150,16 @@ export default function WelcomeOverlay() {
       )}
     </AnimatePresence>
   );
+}
+
+// 按时间段问候
+function greetingByHour(): string {
+  const h = new Date().getHours();
+  if (h < 5) return "夜深了,还不睡";
+  if (h < 9) return "早上好";
+  if (h < 12) return "上午好";
+  if (h < 14) return "中午好";
+  if (h < 18) return "下午好";
+  if (h < 23) return "晚上好";
+  return "夜深了,还不睡";
 }

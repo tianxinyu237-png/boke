@@ -56,6 +56,10 @@ public class Post {
     @Column(name = "updated_at")
     private java.time.LocalDateTime updatedAt;
 
+    /** 火箭点赞数(访客可点,防重复靠前端 localStorage) */
+    @Column(name = "like_count")
+    private Long likeCount = 0L;
+
     @PrePersist
     protected void onCreate() {
         createdAt = java.time.LocalDateTime.now();
@@ -81,6 +85,9 @@ public class Post {
     public void setDate(LocalDate date) { this.date = date; }
     public String getReadTime() { return readTime; }
     public void setReadTime(String readTime) { this.readTime = readTime; }
+
+    public Long getLikeCount() { return likeCount != null ? likeCount : 0L; }
+    public void setLikeCount(Long likeCount) { this.likeCount = likeCount; }
     public String getCoverImage() { return coverImage; }
     public void setCoverImage(String coverImage) { this.coverImage = coverImage; }
     public Boolean isPinned() { return pinned; }

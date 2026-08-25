@@ -7,10 +7,11 @@ import { loadProjectsConfig, saveProjectsConfig, type Project } from "@/lib/proj
 import { loadMusicConfig, saveMusicConfig, type MusicConfig, DEFAULT_MUSIC } from "@/lib/music";
 import { loadThemeConfig, saveThemeConfig, type ThemeColors, DEFAULT_THEME } from "@/lib/theme";
 import { loadResumeConfig, saveResumeConfig, type ResumeConfig, DEFAULT_RESUME } from "@/lib/resume";
+import { loadOneLinerConfig, saveOneLinerConfig, type OneLinerConfig, DEFAULT_ONE_LINER } from "@/lib/oneliner";
 import { AdminButton, showToast } from "@/components/admin/ui";
 import ProjectsEditor from "@/components/admin/projects-editor";
 
-type Tab = "about" | "links" | "projects" | "music" | "theme" | "resume";
+type Tab = "about" | "links" | "projects" | "music" | "theme" | "resume" | "oneliner";
 
 const tabMeta: Record<Tab, { label: string; icon: string; desc: string }> = {
   about:    { label: "关于页",   icon: "👤", desc: "个人简介、技术栈、联系方式" },
@@ -19,6 +20,7 @@ const tabMeta: Record<Tab, { label: string; icon: string; desc: string }> = {
   music:    { label: "音乐",     icon: "🎵", desc: "黑胶播放器曲目列表" },
   theme:    { label: "主题色",   icon: "🎨", desc: "深色/浅色模式配色方案" },
   resume:   { label: "简历",     icon: "📄", desc: "简历页定位语、经历时间线、CTA 文案" },
+  oneliner: { label: "一言",     icon: "✨", desc: "右下角一言挂件文案库,每行一句" },
 };
 
 const JSON_TEMPLATES: Record<Tab, string> = {
@@ -70,7 +72,13 @@ const JSON_TEMPLATES: Record<Tab, string> = {
   "ctaDesc": "看项目细节、技术笔记和完整博客",
   "ctaPrimary": "项目作品集",
   "ctaSecondary": "回博客首页"
-}`
+}`,
+  oneliner: `{
+  "lines": [
+    "代码写得好,头发少不了。",
+    "人生苦短,我用 Python。"
+  ]
+}`,
 };
 
 export default function ContentManagementPage() {
@@ -81,6 +89,7 @@ export default function ContentManagementPage() {
   const [musicJson, setMusicJson] = useState("");
   const [themeJson, setThemeJson] = useState("");
   const [resumeJson, setResumeJson] = useState("");
+  const [onelinerJson, setOnelinerJson] = useState("");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -90,6 +99,7 @@ export default function ContentManagementPage() {
     loadMusicConfig().then((c) => setMusicJson(JSON.stringify(c, null, 2)));
     loadThemeConfig().then((c) => setThemeJson(JSON.stringify(c, null, 2)));
     loadResumeConfig().then((c) => setResumeJson(JSON.stringify(c, null, 2)));
+    loadOneLinerConfig().then((c) => setOnelinerJson(JSON.stringify(c, null, 2)));
   }, []);
 
   const jsonMap: Record<Tab, { val: string; set: (v: string) => void }> = {
@@ -99,6 +109,7 @@ export default function ContentManagementPage() {
     music: { val: musicJson, set: setMusicJson },
     theme: { val: themeJson, set: setThemeJson },
     resume: { val: resumeJson, set: setResumeJson },
+    oneliner: { val: onelinerJson, set: setOnelinerJson },
   };
 
   const current = jsonMap[tab];
@@ -136,6 +147,9 @@ export default function ContentManagementPage() {
           break;
         case "resume":
           await saveResumeConfig({ ...DEFAULT_RESUME, ...parsed });
+          break;
+        case "oneliner":
+          await saveOneLinerConfig({ ...DEFAULT_ONE_LINER, lines: Array.isArray(parsed.lines) ? parsed.lines : DEFAULT_ONE_LINER.lines });
           break;
       }
       showToast("内容已保存", "success");

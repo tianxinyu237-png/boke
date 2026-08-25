@@ -15,6 +15,7 @@ export interface Post {
   readTime: string;
   tags: string[];
   pinned?: boolean;
+  likeCount?: number;
   category?: { id: number; name: string; slug: string };
 }
 

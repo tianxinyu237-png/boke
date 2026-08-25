@@ -119,7 +119,9 @@ export default function HeroSection() {
           <p className="relative z-10 mt-4 text-xl sm:text-2xl text-white leading-relaxed max-w-sm">
             {SITE.description}
           </p>
-          <p className="relative z-10 mt-2 text-base sm:text-lg text-white">{SITE.tagline}</p>
+          <p className="relative z-10 mt-2 text-base sm:text-lg text-white min-h-[1.75rem]">
+            <TypewriterTagline base={SITE.tagline} />
+          </p>
 
           {/* Tech stack badges */}
           <div className="relative z-10 mt-6 flex flex-wrap justify-center lg:justify-start gap-2">
@@ -434,5 +436,49 @@ function MusicNotePlaceholder() {
     <div className="w-24 h-24 rounded-full bg-white/[0.03] border border-white/[0.04] flex items-center justify-center">
       <SpeakerHigh className="w-8 h-8 text-text-muted/20" />
     </div>
+  );
+}
+
+// ── Hero 打字机副标题 ──
+function TypewriterTagline({ base }: { base: string }) {
+  const lines = [
+    base,
+    "记录代码与生活",
+    "一个在路上的开发者",
+    "偶尔整点花活",
+    "欢迎来玩",
+  ].filter((s, i, arr) => s && arr.indexOf(s) === i);
+
+  const [text, setText] = useState("");
+  const [lineIdx, setLineIdx] = useState(0);
+  const [deleting, setDeleting] = useState(false);
+
+  useEffect(() => {
+    const current = lines[lineIdx];
+    let timer: ReturnType<typeof setTimeout>;
+
+    if (!deleting) {
+      if (text.length < current.length) {
+        timer = setTimeout(() => setText(current.slice(0, text.length + 1)), 90);
+      } else {
+        // 打完,停 1.8s 开始删
+        timer = setTimeout(() => setDeleting(true), 1800);
+      }
+    } else {
+      if (text.length > 0) {
+        timer = setTimeout(() => setText(current.slice(0, text.length - 1)), 45);
+      } else {
+        setDeleting(false);
+        setLineIdx((lineIdx + 1) % lines.length);
+      }
+    }
+    return () => clearTimeout(timer);
+  }, [text, deleting, lineIdx, lines]);
+
+  return (
+    <span className="inline-flex items-baseline gap-0.5">
+      <span className="text-white/80">{text}</span>
+      <span className="w-[2px] h-[1.05em] bg-accent inline-block align-middle animate-pulse" />
+    </span>
   );
 }

@@ -10,6 +10,8 @@ import WelcomeOverlay from "@/components/welcome-overlay";
 import FontLoader from "@/components/font-loader";
 import ThemeLoader from "@/components/theme-loader";
 import Live2DWidget from "@/components/live2d-widget";
+import EasterEggs from "@/components/easter-eggs";
+import OneLiner from "@/components/one-liner";
 import { SiteConfigProvider } from "@/components/site-config-provider";
 import { MusicProvider } from "@/components/music-context";
 import { SITE } from "@/lib/config";
@@ -127,6 +129,8 @@ export default function RootLayout({
         <FloatingParticles />
         <Live2DWidget />
         <SmoothScroll />
+        <EasterEggs />
+        <OneLiner />
         </SiteConfigProvider>
       </body>
     </html>

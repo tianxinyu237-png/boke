@@ -33,6 +33,9 @@ public class SiteConfig {
     @Column(name = "resume_config", columnDefinition = "TEXT")
     private String resumeConfig;
 
+    @Column(columnDefinition = "TEXT")
+    private String oneLinerConfig;
+
     @Column(name = "updated_at")
     private java.time.LocalDateTime updatedAt;
 
@@ -65,6 +68,9 @@ public class SiteConfig {
     public void setThemeConfig(String themeConfig) { this.themeConfig = themeConfig; }
     public String getResumeConfig() { return resumeConfig; }
     public void setResumeConfig(String resumeConfig) { this.resumeConfig = resumeConfig; }
+
+    public String getOneLinerConfig() { return oneLinerConfig; }
+    public void setOneLinerConfig(String oneLinerConfig) { this.oneLinerConfig = oneLinerConfig; }
 
     public java.time.LocalDateTime getUpdatedAt() { return updatedAt; }
 }

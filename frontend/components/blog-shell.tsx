@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useSiteConfig } from "@/components/site-config-provider";
@@ -187,6 +187,7 @@ export default function BlogShell({ children }: { children: ReactNode }) {
             {navLinks.map((link) => (
               <NavLink key={link.href} {...link} />
             ))}
+            <RandomLink />
             <div className="ml-1 sm:ml-2">
               <ThemeToggle />
             </div>
@@ -204,5 +205,38 @@ export default function BlogShell({ children }: { children: ReactNode }) {
         </div>
       </footer>
     </>
+  );
+}
+
+// ── 随机逛逛:随机跳一篇归档文章 ──
+function RandomLink() {
+  const [rolling, setRolling] = useState(false);
+
+  async function goRandom() {
+    if (rolling) return;
+    setRolling(true);
+    try {
+      const res = await fetch("/api/posts?page=0&size=50", { cache: "no-store" });
+      const data = await res.json();
+      const posts = data?.posts ?? [];
+      if (posts.length) {
+        const pick = posts[Math.floor(Math.random() * posts.length)];
+        window.location.href = "/posts/" + pick.slug;
+        return;
+      }
+    } catch {}
+    setRolling(false);
+  }
+
+  return (
+    <button
+      onClick={goRandom}
+      title="随机逛一篇"
+      aria-label="随机逛一篇"
+      className="relative flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-2 rounded-lg text-sm text-white hover:bg-white/10 transition-all duration-200"
+    >
+      <span className={`inline-block text-base leading-none ${rolling ? "animate-spin" : ""}`}>🎲</span>
+      <span className="hidden sm:inline">随机</span>
+    </button>
   );
 }

@@ -3,18 +3,19 @@
 import { useState, useEffect, useMemo } from "react";
 import { loadAboutConfig, saveAboutConfig, type AboutConfig, DEFAULT_ABOUT } from "@/lib/about";
 import { loadLinksConfig, saveLinksConfig, type LinksConfig, DEFAULT_LINKS } from "@/lib/links";
-import { loadProjectsConfig, saveProjectsConfig, type ProjectsConfig, DEFAULT_PROJECTS } from "@/lib/projects";
+import { loadProjectsConfig, saveProjectsConfig, type Project } from "@/lib/projects";
 import { loadMusicConfig, saveMusicConfig, type MusicConfig, DEFAULT_MUSIC } from "@/lib/music";
 import { loadThemeConfig, saveThemeConfig, type ThemeColors, DEFAULT_THEME } from "@/lib/theme";
 import { loadResumeConfig, saveResumeConfig, type ResumeConfig, DEFAULT_RESUME } from "@/lib/resume";
 import { AdminButton, showToast } from "@/components/admin/ui";
+import ProjectsEditor from "@/components/admin/projects-editor";
 
 type Tab = "about" | "links" | "projects" | "music" | "theme" | "resume";
 
 const tabMeta: Record<Tab, { label: string; icon: string; desc: string }> = {
   about:    { label: "关于页",   icon: "👤", desc: "个人简介、技术栈、联系方式" },
   links:    { label: "友链",     icon: "🔗", desc: "友情链接和交换信息" },
-  projects: { label: "项目",     icon: "🚀", desc: "项目展示卡片" },
+  projects: { label: "项目",     icon: "🚀", desc: "项目展示卡片(表单编辑,支持增删排序)" },
   music:    { label: "音乐",     icon: "🎵", desc: "黑胶播放器曲目列表" },
   theme:    { label: "主题色",   icon: "🎨", desc: "深色/浅色模式配色方案" },
   resume:   { label: "简历",     icon: "📄", desc: "简历页定位语、经历时间线、CTA 文案" },
@@ -76,7 +77,7 @@ export default function ContentManagementPage() {
   const [tab, setTab] = useState<Tab>("about");
   const [aboutJson, setAboutJson] = useState("");
   const [linksJson, setLinksJson] = useState("");
-  const [projectsJson, setProjectsJson] = useState("");
+  const [projectsList, setProjectsList] = useState<Project[]>([]);
   const [musicJson, setMusicJson] = useState("");
   const [themeJson, setThemeJson] = useState("");
   const [resumeJson, setResumeJson] = useState("");
@@ -85,7 +86,7 @@ export default function ContentManagementPage() {
   useEffect(() => {
     loadAboutConfig().then((c) => setAboutJson(JSON.stringify({ bio: c.bio, techStack: c.techStack, contacts: c.contacts }, null, 2)));
     loadLinksConfig().then((c) => setLinksJson(JSON.stringify(c, null, 2)));
-    loadProjectsConfig().then((c) => setProjectsJson(JSON.stringify(c, null, 2)));
+    loadProjectsConfig().then((c) => setProjectsList(c.projects));
     loadMusicConfig().then((c) => setMusicJson(JSON.stringify(c, null, 2)));
     loadThemeConfig().then((c) => setThemeJson(JSON.stringify(c, null, 2)));
     loadResumeConfig().then((c) => setResumeJson(JSON.stringify(c, null, 2)));
@@ -94,7 +95,7 @@ export default function ContentManagementPage() {
   const jsonMap: Record<Tab, { val: string; set: (v: string) => void }> = {
     about: { val: aboutJson, set: setAboutJson },
     links: { val: linksJson, set: setLinksJson },
-    projects: { val: projectsJson, set: setProjectsJson },
+    projects: { val: "", set: () => {} },
     music: { val: musicJson, set: setMusicJson },
     theme: { val: themeJson, set: setThemeJson },
     resume: { val: resumeJson, set: setResumeJson },
@@ -102,10 +103,21 @@ export default function ContentManagementPage() {
 
   const current = jsonMap[tab];
   const isValidJson = useMemo(() => {
+    if (tab === "projects") return true;
     try { JSON.parse(current.val); return true; } catch { return false; }
-  }, [current.val]);
+  }, [current.val, tab]);
 
   async function handleSave() {
+    if (tab === "projects") {
+      setSaving(true);
+      try {
+        await saveProjectsConfig({ projects: projectsList });
+        showToast("内容已保存", "success");
+      } finally {
+        setSaving(false);
+      }
+      return;
+    }
     try {
       setSaving(true);
       const parsed = JSON.parse(current.val);
@@ -115,9 +127,6 @@ export default function ContentManagementPage() {
           break;
         case "links":
           await saveLinksConfig({ ...DEFAULT_LINKS, ...parsed });
-          break;
-        case "projects":
-          await saveProjectsConfig({ ...DEFAULT_PROJECTS, ...parsed });
           break;
         case "music":
           await saveMusicConfig({ ...DEFAULT_MUSIC, ...parsed });
@@ -199,6 +208,9 @@ export default function ContentManagementPage() {
       </div>
 
       {/* Editor */}
+      {tab === "projects" ? (
+        <ProjectsEditor projects={projectsList} onChange={setProjectsList} />
+      ) : (
       <div className="bg-bg-soft border border-border rounded-xl overflow-hidden">
         <textarea
           value={current.val}
@@ -211,8 +223,10 @@ export default function ContentManagementPage() {
           <span>{current.val.split("\n").length} 行 · {current.val.length} 字符</span>
         </div>
       </div>
+      )}
 
       {/* Template reference */}
+      {tab !== "projects" && (
       <details className="bg-bg-soft border border-border rounded-xl overflow-hidden">
         <summary className="px-5 py-3 text-xs font-medium text-text-secondary cursor-pointer hover:text-text-primary transition-colors select-none">
           📋 {currentMeta.label} JSON 模板参考
@@ -221,6 +235,7 @@ export default function ContentManagementPage() {
           <pre className="text-xs font-mono text-text-muted leading-relaxed whitespace-pre-wrap">{JSON_TEMPLATES[tab]}</pre>
         </div>
       </details>
+      )}
     </div>
   );
 }

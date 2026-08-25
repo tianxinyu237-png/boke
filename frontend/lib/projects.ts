@@ -41,14 +41,27 @@ export async function loadProjectsConfig(): Promise<ProjectsConfig> {
       const parsed = typeof data.projectsConfig === "string"
         ? JSON.parse(data.projectsConfig)
         : data.projectsConfig;
-      // Normalize: backend may store `description`, frontend uses `desc`
-      if (Array.isArray(parsed.projects)) {
-        parsed.projects = parsed.projects.map((p: any) => ({
-          ...p,
-          desc: p.desc ?? p.description ?? "",
-        }));
+      // 兼容两种存储格式:
+      //  1) 标准对象格式 { "projects": [...] }
+      //  2) 旧版纯数组格式 [ {...}, {...} ] (数据库里遗留的历史数据)
+      let list: any[] = [];
+      if (Array.isArray(parsed)) {
+        list = parsed;
+      } else if (parsed && Array.isArray(parsed.projects)) {
+        list = parsed.projects;
       }
-      return { ...DEFAULT_PROJECTS, ...parsed };
+      if (list.length) {
+        // Normalize: backend may store `description`, frontend uses `desc`
+        return {
+          projects: list.map((p: any) => ({
+            name: p.name ?? "",
+            url: p.url ?? "",
+            desc: p.desc ?? p.description ?? "",
+            tags: Array.isArray(p.tags) ? p.tags : [],
+            stars: p.stars ?? "",
+          })),
+        };
+      }
     }
   } catch {}
   return DEFAULT_PROJECTS;

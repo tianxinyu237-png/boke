@@ -27,12 +27,15 @@ export default function ProjectsPage() {
         {cfg.projects.map((p, i) => {
           const isOnline = p.url && p.url.startsWith("http");
           const isWip = !isOnline && /进行中|规划|开发中|TODO/i.test(p.desc);
+          const detailPath = p.slug ? `/projects/${p.slug}` : null;
+          const href = detailPath ?? p.url ?? "#";
+          const external = !detailPath && isOnline;
           return (
           <motion.a
             key={p.name}
-            href={p.url || "#"}
-            target={p.url?.startsWith("http") ? "_blank" : undefined}
-            rel={p.url?.startsWith("http") ? "noopener noreferrer" : undefined}
+            href={href}
+            target={external ? "_blank" : undefined}
+            rel={external ? "noopener noreferrer" : undefined}
             initial={reduce ? {} : { opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.06 }}
@@ -62,6 +65,11 @@ export default function ProjectsPage() {
                 </span>
               ))}
             </div>
+            {detailPath && (
+              <div className="mt-3 text-[11px] text-text-muted group-hover:text-accent transition-colors">
+                查看详情 →
+              </div>
+            )}
           </motion.a>
           );
         })}

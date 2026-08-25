@@ -30,12 +30,16 @@ export default function FeaturedProjects() {
       </div>
 
       <div className="grid sm:grid-cols-3 gap-4">
-        {featured.map((p, i) => (
+        {featured.map((p, i) => {
+          const detailPath = p.slug ? `/projects/${p.slug}` : null;
+          const href = detailPath ?? p.url ?? "/projects";
+          const external = !detailPath && p.url?.startsWith("http");
+          return (
           <motion.a
             key={p.name}
-            href={p.url || "/projects"}
-            target={p.url?.startsWith("http") ? "_blank" : undefined}
-            rel={p.url?.startsWith("http") ? "noopener noreferrer" : undefined}
+            href={href}
+            target={external ? "_blank" : undefined}
+            rel={external ? "noopener noreferrer" : undefined}
             initial={reduce ? {} : { opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.08 }}
@@ -55,8 +59,14 @@ export default function FeaturedProjects() {
             <p className="text-xs text-text-secondary leading-relaxed line-clamp-3">
               {p.desc}
             </p>
+            {detailPath && (
+              <div className="mt-2.5 text-[10px] text-text-muted group-hover:text-accent transition-colors">
+                查看详情 →
+              </div>
+            )}
           </motion.a>
-        ))}
+          );
+        })}
       </div>
     </section>
   );

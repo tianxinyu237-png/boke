@@ -1,9 +1,20 @@
+export interface ProjectLink {
+  label: string;
+  url: string;
+}
+
 export interface Project {
   name: string;
   url?: string;
   desc: string;
   tags: string[];
   stars?: string;
+  // 详情页字段(均可选,兼容旧数据)
+  slug?: string;
+  longDesc?: string;
+  features?: string[];
+  screenshots?: string[];
+  links?: ProjectLink[];
 }
 
 export interface ProjectsConfig {
@@ -32,6 +43,23 @@ const API_BASE = typeof window !== "undefined"
   ? (process.env.NEXT_PUBLIC_API_URL || "/api")
   : "/api";
 
+function normalizeProject(p: any): Project {
+  return {
+    name: p.name ?? "",
+    url: p.url ?? "",
+    desc: p.desc ?? p.description ?? "",
+    tags: Array.isArray(p.tags) ? p.tags : [],
+    stars: p.stars ?? "",
+    slug: p.slug ?? "",
+    longDesc: p.longDesc ?? p.long_description ?? "",
+    features: Array.isArray(p.features) ? p.features : [],
+    screenshots: Array.isArray(p.screenshots) ? p.screenshots : [],
+    links: Array.isArray(p.links)
+      ? p.links.map((l: any) => ({ label: l.label ?? l.name ?? "", url: l.url ?? "" }))
+      : [],
+  };
+}
+
 export async function loadProjectsConfig(): Promise<ProjectsConfig> {
   try {
     const res = await fetch(`${API_BASE}/site-config`);
@@ -51,16 +79,7 @@ export async function loadProjectsConfig(): Promise<ProjectsConfig> {
         list = parsed.projects;
       }
       if (list.length) {
-        // Normalize: backend may store `description`, frontend uses `desc`
-        return {
-          projects: list.map((p: any) => ({
-            name: p.name ?? "",
-            url: p.url ?? "",
-            desc: p.desc ?? p.description ?? "",
-            tags: Array.isArray(p.tags) ? p.tags : [],
-            stars: p.stars ?? "",
-          })),
-        };
+        return { projects: list.map(normalizeProject) };
       }
     }
   } catch {}

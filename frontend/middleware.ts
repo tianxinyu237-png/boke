@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 
-// next.config env 构建时内联(edge runtime 读不到 NEXT_PUBLIC_*);本机 dev 用 localhost
-const API = process.env.API_URL || "http://localhost:8080/api";
-
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
@@ -20,9 +17,11 @@ export async function middleware(req: NextRequest) {
   const referer = req.headers.get("referer") || "";
 
   try {
+    // 用请求自身 origin 拼后端地址:线上经 nginx→rewrite 到 backend,本机 dev 直通 8080
+    // 注意:不要用 process.env 取地址 — edge runtime 编译时 env 替换不可靠(实测被替换成 undefined)
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 2000);
-    const res = await fetch(`${API}/visitors/record`, {
+    const res = await fetch(`${req.nextUrl.origin}/api/visitors/record`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

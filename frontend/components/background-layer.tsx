@@ -9,30 +9,32 @@ import { loadBgConfig, saveBgConfig, loadBgConfigHybrid, type BackgroundConfig }
 const VEIL_GRADIENT =
   "linear-gradient(180deg, rgba(10,10,22,0.52) 0%, rgba(10,10,22,0.44) 50%, rgba(10,10,22,0.56) 100%)";
 
-export default function BackgroundLayer() {
+export default function BackgroundLayer({ initialConfig }: { initialConfig?: BackgroundConfig }) {
   const pathname = usePathname();
   const isAdmin = pathname.startsWith("/admin");
   const isHome = pathname === "/";
-  const [config, setConfig] = useState<BackgroundConfig | null>(null);
+  const [config, setConfig] = useState<BackgroundConfig | null>(initialConfig || null);
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  useEffect(() => {
-    loadBgConfigHybrid().then((cfg) => {
-      setConfig(cfg);
+  // 配置去重: 值与当前相同时不 setState, 避免路由切换/重复 fetch 时重新应用背景(图片重载/闪烁)
+  const setConfigIfChanged = (cfg: BackgroundConfig) => {
+    setConfig((prev) => {
+      if (prev && JSON.stringify(prev) === JSON.stringify(cfg)) return prev;
+      return cfg;
     });
+  };
+
+  useEffect(() => {
+    loadBgConfigHybrid().then(setConfigIfChanged);
   }, []);
 
   useEffect(() => {
-    loadBgConfigHybrid().then((cfg) => {
-      setConfig(cfg);
-    });
+    loadBgConfigHybrid().then(setConfigIfChanged);
   }, [pathname]);
 
   useEffect(() => {
     const handler = () => {
-      loadBgConfigHybrid().then((cfg) => {
-        setConfig(cfg);
-      });
+      loadBgConfigHybrid().then(setConfigIfChanged);
     };
     window.addEventListener("bg-config-change", handler);
     return () => window.removeEventListener("bg-config-change", handler);

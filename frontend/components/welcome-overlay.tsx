@@ -6,10 +6,10 @@ import { motion, AnimatePresence } from "motion/react";
 import { useSiteConfig } from "@/components/site-config-provider";
 import { loadBgConfigHybrid, type BackgroundConfig } from "@/lib/background";
 
-export default function WelcomeOverlay() {
+export default function WelcomeOverlay({ initialBgConfig }: { initialBgConfig?: BackgroundConfig }) {
   const pathname = usePathname();
   const [visible, setVisible] = useState(false);
-  const [bgConfig, setBgConfig] = useState<BackgroundConfig | null>(null);
+  const [bgConfig, setBgConfig] = useState<BackgroundConfig | null>(initialBgConfig || null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const { config: SITE } = useSiteConfig();
 

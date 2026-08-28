@@ -13,11 +13,14 @@ const SiteConfigContext = createContext<SiteConfigContextType>({
   update: () => {},
 });
 
-export function SiteConfigProvider({ children }: { children: ReactNode }) {
-  const [config, setConfig] = useState<SiteConfig>(DEFAULT_SITE);
+export function SiteConfigProvider({ children, initialConfig }: { children: ReactNode; initialConfig?: SiteConfig }) {
+  const [config, setConfig] = useState<SiteConfig>(initialConfig || DEFAULT_SITE);
 
   useEffect(() => {
-    loadSiteConfigHybrid().then(setConfig);
+    // SSR 已注入初始配置, 此处仅兜底刷新(后台改配置后已有会话也能同步), 值相同不触发重渲染
+    loadSiteConfigHybrid().then((c) => {
+      setConfig((prev) => (JSON.stringify(prev) === JSON.stringify(c) ? prev : c));
+    });
   }, []);
 
   const update = (patch: Partial<SiteConfig>) => {

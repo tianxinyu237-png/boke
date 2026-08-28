@@ -1,24 +1,26 @@
 "use client";
 
 import { useEffect } from "react";
-import { loadThemeConfig, applyTheme } from "@/lib/theme";
+import { loadThemeConfig, applyTheme, type ThemeColors, DEFAULT_THEME } from "@/lib/theme";
 
-export default function ThemeLoader() {
+export default function ThemeLoader({ initialTheme }: { initialTheme?: ThemeColors }) {
   useEffect(() => {
-    loadThemeConfig().then((theme) => {
-      // Determine current mode
-      const isLight = document.documentElement.classList.contains("light");
-      applyTheme(theme, isLight);
+    let currentTheme = initialTheme || DEFAULT_THEME;
+    const isLight = () => document.documentElement.classList.contains("light");
 
-      // Listen for theme changes
-      const observer = new MutationObserver(() => {
-        const light = document.documentElement.classList.contains("light");
-        applyTheme(theme, light);
-      });
-      observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
-      return () => observer.disconnect();
+    // SSR 已注入首帧主题, 挂载即应用(值相同, 无视觉闪变), fetch 仅作后台配置变更兜底
+    applyTheme(currentTheme, isLight());
+
+    const observer = new MutationObserver(() => applyTheme(currentTheme, isLight()));
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+
+    loadThemeConfig().then((theme) => {
+      currentTheme = theme;
+      applyTheme(currentTheme, isLight());
     });
-  }, []);
+
+    return () => observer.disconnect();
+  }, [initialTheme]);
 
   return null;
 }

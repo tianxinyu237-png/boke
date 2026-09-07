@@ -142,6 +142,18 @@ export function IconMoment({ className = "w-4 h-4" }: { className?: string }) {
   );
 }
 
+export function IconCat({ className = "w-4 h-4" }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+      <path d="M12 5c-3.5 0-7 2.5-7 7 0 3.5 2.5 6.5 7 6.5s7-3 7-6.5c0-4.5-3.5-7-7-7z" />
+      <path d="M9 4l-1.5-2M15 4l1.5-2" />
+      <path d="M9.5 12v.01M14.5 12v.01" />
+      <path d="M9.8 15.2c.6.5 1.4.8 2.2.8s1.6-.3 2.2-.8" />
+      <path d="M4 10c-1.5-1-2.5-1-3-1M20 10c1.5-1 2.5-1 3-1" />
+    </svg>
+  );
+}
+
 export function IconExternal({ className = "w-4 h-4" }: { className?: string }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
@@ -305,6 +317,7 @@ export function AdminConfirmDialog({
   confirmLabel = "确认",
   cancelLabel = "取消",
   variant = "danger",
+  extra,
   onConfirm,
   onCancel,
 }: {
@@ -314,6 +327,7 @@ export function AdminConfirmDialog({
   confirmLabel?: string;
   cancelLabel?: string;
   variant?: "danger" | "primary";
+  extra?: ReactNode;
   onConfirm: () => void;
   onCancel: () => void;
 }) {
@@ -325,8 +339,9 @@ export function AdminConfirmDialog({
         onClick={(e) => e.stopPropagation()}
       >
         <h3 className="text-base font-semibold text-text-primary mb-2">{title}</h3>
-        <p className="text-sm text-text-secondary mb-6">{message}</p>
-        <div className="flex justify-end gap-3">
+        <p className="text-sm text-text-secondary mb-4">{message}</p>
+        {extra}
+        <div className="flex justify-end gap-3 mt-4">
           <AdminButton variant="secondary" onClick={onCancel}>{cancelLabel}</AdminButton>
           <AdminButton variant={variant} onClick={onConfirm}>{confirmLabel}</AdminButton>
         </div>
@@ -342,6 +357,7 @@ const BREADCRUMB_MAP: Record<string, string> = {
   "/admin/notes": "笔记管理",
   "/admin/posts": "文章编辑",
   "/admin/particles": "粒子动效",
+  "/admin/pet": "看板猫",
   "/admin/background": "背景设置",
   "/admin/fonts": "字体设置",
   "/admin/settings": "站点设置",

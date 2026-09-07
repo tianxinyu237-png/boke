@@ -21,7 +21,7 @@ public class SiteConfigController {
     public ResponseEntity<Map<String, Object>> getConfig() {
         SiteConfig config = repo.findById(1L).orElse(null);
         Map<String, Object> result = new java.util.HashMap<>();
-        String[] fields = {"backgroundConfig","siteConfig","aboutConfig","linksConfig","projectsConfig","musicConfig","themeConfig","resumeConfig","oneLinerConfig"};
+        String[] fields = {"backgroundConfig","siteConfig","aboutConfig","linksConfig","projectsConfig","musicConfig","themeConfig","resumeConfig","oneLinerConfig","particleConfig","petConfig"};
         for (String f : fields) {
             result.put(f, config != null ? getField(config, f) : null);
         }
@@ -31,7 +31,7 @@ public class SiteConfigController {
     @PutMapping
     public ResponseEntity<Map<String, Object>> updateConfig(@RequestBody Map<String, Object> body) {
         SiteConfig config = repo.findById(1L).orElse(new SiteConfig());
-        String[] fields = {"backgroundConfig","siteConfig","aboutConfig","linksConfig","projectsConfig","musicConfig","themeConfig","resumeConfig","oneLinerConfig"};
+        String[] fields = {"backgroundConfig","siteConfig","aboutConfig","linksConfig","projectsConfig","musicConfig","themeConfig","resumeConfig","oneLinerConfig","particleConfig","petConfig"};
         for (String f : fields) {
             if (body.containsKey(f)) {
                 Object val = body.get(f);
@@ -53,6 +53,8 @@ public class SiteConfigController {
             case "themeConfig": return c.getThemeConfig();
             case "resumeConfig": return c.getResumeConfig();
             case "oneLinerConfig": return c.getOneLinerConfig();
+            case "particleConfig": return c.getParticleConfig();
+            case "petConfig": return c.getPetConfig();
         }
         return null;
     }
@@ -68,6 +70,8 @@ public class SiteConfigController {
             case "themeConfig": c.setThemeConfig(val); break;
             case "resumeConfig": c.setResumeConfig(val); break;
             case "oneLinerConfig": c.setOneLinerConfig(val); break;
+            case "particleConfig": c.setParticleConfig(val); break;
+            case "petConfig": c.setPetConfig(val); break;
         }
     }
 }

@@ -36,6 +36,12 @@ public class SiteConfig {
     @Column(columnDefinition = "TEXT")
     private String oneLinerConfig;
 
+    @Column(name = "particle_config", columnDefinition = "TEXT")
+    private String particleConfig;
+
+    @Column(name = "pet_config", columnDefinition = "TEXT")
+    private String petConfig;
+
     @Column(name = "updated_at")
     private java.time.LocalDateTime updatedAt;
 
@@ -71,6 +77,12 @@ public class SiteConfig {
 
     public String getOneLinerConfig() { return oneLinerConfig; }
     public void setOneLinerConfig(String oneLinerConfig) { this.oneLinerConfig = oneLinerConfig; }
+
+    public String getParticleConfig() { return particleConfig; }
+    public void setParticleConfig(String particleConfig) { this.particleConfig = particleConfig; }
+
+    public String getPetConfig() { return petConfig; }
+    public void setPetConfig(String petConfig) { this.petConfig = petConfig; }
 
     public java.time.LocalDateTime getUpdatedAt() { return updatedAt; }
 }

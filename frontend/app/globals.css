@@ -365,3 +365,59 @@ body.has-custom-bg .backdrop-blur-2xl {
   scrollbar-width: none;
 }
 
+
+/* ══ 看板猫宠物动画 (2026-09-07) ══ */
+@keyframes pet-jump {
+  0%, 100% { transform: translateY(0); }
+  30% { transform: translateY(-16px) scale(1.05, 0.95); }
+  60% { transform: translateY(0) scale(0.96, 1.04); }
+  80% { transform: translateY(-5px); }
+}
+.pet-anim-jump { animation: pet-jump 0.7s ease; }
+@keyframes pet-angry {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px) rotate(-2deg); }
+  40% { transform: translateX(6px) rotate(2deg); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+.pet-anim-angry { animation: pet-angry 0.6s ease; }
+@keyframes pet-eat {
+  0%, 100% { transform: scale(1); }
+  30% { transform: scale(0.92, 1.08); }
+  50% { transform: scale(1.05, 0.93); }
+  70% { transform: scale(0.95, 1.05); }
+}
+.pet-anim-eat { animation: pet-eat 0.8s ease; }
+/* 小鱼干飞入: 元素 JS 定位到猫嘴, 动画仅做位移/缩放 */
+@keyframes pet-fish-in {
+  from { transform: translate(150px, -60px) rotate(18deg) scale(1); opacity: 0; }
+  15% { opacity: 1; }
+  to { transform: translate(0, 0) rotate(0) scale(0.32); opacity: 1; }
+}
+@keyframes pet-fish-in-r {
+  from { transform: translate(-150px, -60px) rotate(-18deg) scale(1); opacity: 0; }
+  15% { opacity: 1; }
+  to { transform: translate(0, 0) rotate(0) scale(0.32); opacity: 1; }
+}
+.pet-fish-left { animation: pet-fish-in 1s cubic-bezier(0.5, 0.05, 0.6, 0.9) forwards; }
+.pet-fish-right { animation: pet-fish-in-r 1s cubic-bezier(0.5, 0.05, 0.6, 0.9) forwards; }
+/* 加分飘字 */
+@keyframes pet-rise {
+  0% { transform: translate(-50%, 0); opacity: 0; }
+  15% { opacity: 1; }
+  100% { transform: translate(-50%, -72px); opacity: 0; }
+}
+.pet-rise { animation: pet-rise 1.5s ease-out forwards; }
+/* 气泡入场 */
+@keyframes pet-bubble-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.92); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.pet-bubble-in { animation: pet-bubble-in 0.22s ease-out; }
+/* 隐藏后的小圆点呼吸 */
+@keyframes pet-dot-breathe {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 0.75; }
+}
+.pet-dot { animation: pet-dot-breathe 3s ease-in-out infinite; }

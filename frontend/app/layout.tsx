@@ -10,7 +10,7 @@ import SmoothScroll from "@/components/smooth-scroll";
 import WelcomeOverlay from "@/components/welcome-overlay";
 import FontLoader from "@/components/font-loader";
 import ThemeLoader from "@/components/theme-loader";
-import Live2DWidget from "@/components/live2d-widget";
+import PetCat from "@/components/pet-cat";
 import EasterEggs from "@/components/easter-eggs";
 import OneLiner from "@/components/one-liner";
 import { SiteConfigProvider } from "@/components/site-config-provider";
@@ -152,7 +152,7 @@ export default async function RootLayout({
         <FontLoader />
         <BackgroundLayer initialConfig={cfg.bgConfig} />
         <FloatingParticles />
-        <Live2DWidget />
+        <PetCat />
         <SmoothScroll />
         <EasterEggs />
         <OneLiner />

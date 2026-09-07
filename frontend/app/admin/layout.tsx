@@ -4,7 +4,7 @@ import { useAuth, AuthProvider } from "@/lib/admin/auth";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, type ReactNode } from "react";
-import { IconPosts, IconNotes, IconNew, IconSparkles, IconBg, IconFont, IconSettings, IconContent, IconProject, IconVisitors, IconFolder, IconPhoto, IconMoment, IconMusic, IconExternal, IconLogout, AdminToastContainer, AdminBreadcrumb, AdminConfirmDialog } from "@/components/admin/ui";
+import { IconPosts, IconNotes, IconNew, IconSparkles, IconBg, IconFont, IconSettings, IconContent, IconProject, IconVisitors, IconFolder, IconPhoto, IconMoment, IconMusic, IconCat, IconExternal, IconLogout, AdminToastContainer, AdminBreadcrumb, AdminConfirmDialog } from "@/components/admin/ui";
 
 interface NavGroup {
   label: string;
@@ -38,6 +38,7 @@ function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => 
       label: "外观",
       items: [
         { href: "/admin/particles", label: "粒子动效", icon: IconSparkles },
+        { href: "/admin/pet", label: "看板猫", icon: IconCat },
         { href: "/admin/background", label: "背景设置", icon: IconBg },
         { href: "/admin/fonts", label: "字体设置", icon: IconFont },
       ],

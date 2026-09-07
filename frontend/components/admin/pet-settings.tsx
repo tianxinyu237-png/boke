@@ -16,6 +16,7 @@ import {
   resetPetState,
   PET_MODELS,
   POSITIONS,
+  PERSONALITIES,
   type PetConfig,
 } from "@/lib/pet";
 
@@ -45,6 +46,7 @@ export default function PetSettings() {
   const [config, setConfig] = useState<PetConfig | null>(null);
   const [saving, setSaving] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
+  const [personalityIdx, setPersonalityIdx] = useState<number | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -85,6 +87,15 @@ export default function PetSettings() {
     resetPetState();
     setResetOpen(false);
     showToast("好感度已重置(仅当前浏览器生效)", "success");
+  }
+
+  function handleApplyPersonality() {
+    if (personalityIdx === null) return;
+    const p = PERSONALITIES[personalityIdx];
+    if (!p) return;
+    setConfig((prev) => (prev ? { ...prev, ...p.lines } : prev));
+    setPersonalityIdx(null);
+    showToast(`已套用「${p.name}」语库，别忘了点保存设置生效`, "info");
   }
 
   if (!config) return <AdminSkeleton variant="form" />;
@@ -157,6 +168,20 @@ export default function PetSettings() {
             <Switch
               on={config.dragEnabled}
               onClick={() => update("dragEnabled", !config.dragEnabled)}
+            />
+          </label>
+          <label className="flex items-center justify-between">
+            <span className="text-sm text-text-primary">划词夸赞（选中文字时冒泡）</span>
+            <Switch
+              on={config.selectEnabled}
+              onClick={() => update("selectEnabled", !config.selectEnabled)}
+            />
+          </label>
+          <label className="flex items-center justify-between">
+            <span className="text-sm text-text-primary">读到文末冒泡</span>
+            <Switch
+              on={config.scrollEnabled}
+              onClick={() => update("scrollEnabled", !config.scrollEnabled)}
             />
           </label>
         </div>
@@ -337,6 +362,20 @@ export default function PetSettings() {
       {/* ④ 对话语库 */}
       <div className="bg-bg-soft border border-border rounded-xl p-5 space-y-4">
         <h3 className="text-sm font-semibold text-text-primary">对话语库（每行一条，留空则该场景不说话）</h3>
+        {/* 性格模板一键套用 */}
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs text-text-muted mr-1">性格模板(覆盖下方全部语库)：</span>
+          {PERSONALITIES.map((p, i) => (
+            <button
+              key={p.name}
+              title={p.desc}
+              onClick={() => setPersonalityIdx(i)}
+              className="px-2.5 py-1 rounded-lg text-xs border border-border bg-bg hover:border-accent hover:text-accent transition-colors"
+            >
+              {p.icon} {p.name}
+            </button>
+          ))}
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <AdminTextarea
             label="🖐 欢迎语（进站首次）"
@@ -379,6 +418,18 @@ export default function PetSettings() {
             rows={4}
             value={config.levelUpLines}
             onChange={(e) => update("levelUpLines", e.target.value)}
+          />
+          <AdminTextarea
+            label="✂️ 划词夸赞语（选中文字后冒泡）"
+            rows={3}
+            value={config.selectLines}
+            onChange={(e) => update("selectLines", e.target.value)}
+          />
+          <AdminTextarea
+            label="📖 读到文末语（滚动到底部冒泡，每页一次）"
+            rows={3}
+            value={config.scrollLines}
+            onChange={(e) => update("scrollLines", e.target.value)}
           />
           <div className="space-y-3">
             <p className="text-[11px] text-text-muted">
@@ -452,6 +503,14 @@ export default function PetSettings() {
         variant="danger"
         onConfirm={handleResetFeelings}
         onCancel={() => setResetOpen(false)}
+      />
+      <AdminConfirmDialog
+        open={personalityIdx !== null}
+        title={`套用「${personalityIdx !== null ? PERSONALITIES[personalityIdx]?.name : ""}」性格模板`}
+        message={`将覆盖下方全部语库内容（欢迎/点击/抚摸/喂食/空闲/生气/升级/划词/文末共 ${personalityIdx !== null ? Object.keys(PERSONALITIES[personalityIdx]?.lines ?? {}).length : 0} 组）。确定套用吗？`}
+        confirmLabel="套用"
+        onConfirm={handleApplyPersonality}
+        onCancel={() => setPersonalityIdx(null)}
       />
     </div>
   );

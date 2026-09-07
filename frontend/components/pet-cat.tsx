@@ -64,7 +64,20 @@ export default function PetCat() {
 
   // Live2D canvas 就绪后才有定位基准
   const [canvas, setCanvas] = useState<HTMLElement | null>(null);
+  const canvasRef = useRef<HTMLElement | null>(null);
   const uiRef = useRef<HTMLDivElement>(null);
+
+  /** 触发模型真实动作(pixi 渲染器挂在 canvas.__petMotion 上) */
+  const playPetMotion = useCallback(() => {
+    const c = canvasRef.current as any;
+    if (c && typeof c.__petMotion === "function") {
+      try {
+        c.__petMotion();
+      } catch {
+        /* noop */
+      }
+    }
+  }, []);
 
   // 气泡(打字机)
   const [bubbleFull, setBubbleFull] = useState("");
@@ -284,20 +297,22 @@ export default function PetCat() {
   // ── 互动动作 ──
   const doClick = useCallback(() => {
     setAnim({ name: "jump", ts: Date.now() });
+    playPetMotion();
     sayText(pickLine(cfgRef.current.clickLines, cfgRef.current.petName));
     const { levelUp, newLevel } = useFeel(0.2);
     if (levelUp) setTimeout(() => sayText(levelUpLine(newLevel)), LEVELUP_DELAY_MS);
     resetIdle();
-  }, [resetIdle, sayText, useFeel]);
+  }, [resetIdle, sayText, useFeel, playPetMotion]);
 
   const doPet = useCallback(() => {
     const d = dragRef.current;
     d.petFired = true;
     setAnim({ name: "eat", ts: Date.now() });
+    playPetMotion();
     const { levelUp, newLevel } = useFeel(1, "+1 ♥");
     sayWithLevelUp(levelUp, newLevel, pickLine(cfgRef.current.petLines, cfgRef.current.petName));
     resetIdle();
-  }, [resetIdle, sayText, useFeel]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [resetIdle, sayText, useFeel, playPetMotion]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const doFeedStart = useCallback(() => {
     setFish((f) => (f ? f : ++uid));
@@ -307,10 +322,11 @@ export default function PetCat() {
   const doFeedEnd = useCallback(() => {
     setFish(null);
     setAnim({ name: "eat", ts: Date.now() });
+    playPetMotion();
     const { levelUp, newLevel } = useFeel(2, "+2 ♥");
     sayWithLevelUp(levelUp, newLevel, pickLine(cfgRef.current.feedLines, cfgRef.current.petName));
     resetIdle();
-  }, [resetIdle, sayText, useFeel]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [resetIdle, sayText, useFeel, playPetMotion]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const doHide = useCallback(() => {
     try {
@@ -325,6 +341,75 @@ export default function PetCat() {
     } catch {}
     setHidden(false);
   }, []);
+
+  // ── 彩蛋: 划词夸赞 + 读到文末(二期) ──
+  const lastSelectRef = useRef(0);
+  const selTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pageEndDoneRef = useRef(false);
+
+  useEffect(() => {
+    const inPetUi = (node: Node | null): boolean => {
+      let el: Node | null = node;
+      while (el && el !== document.body) {
+        const e = el as HTMLElement;
+        if (e.style && e.style.zIndex === String(PET_UI_Z)) return true;
+        el = el.parentNode;
+      }
+      return false;
+    };
+    const onSelection = () => {
+      if (!cfgRef.current.selectEnabled || !cfgRef.current.enabled) return;
+      const sel = window.getSelection();
+      const text = sel ? sel.toString().trim() : "";
+      if (!text || text.length > 300) return;
+      if (!sel || !sel.anchorNode || inPetUi(sel.anchorNode)) return;
+      if (Date.now() - lastSelectRef.current < 45000) return; // 频控
+      if (selTimerRef.current) clearTimeout(selTimerRef.current);
+      // 稳定 600ms 后仍选中才算(防抖)
+      selTimerRef.current = setTimeout(() => {
+        selTimerRef.current = null;
+        const sel2 = window.getSelection();
+        const text2 = sel2 ? sel2.toString().trim() : "";
+        if (!text2 || text2.length > 300) return;
+        if (!sel2 || !sel2.anchorNode || inPetUi(sel2.anchorNode)) return;
+        if (Date.now() - lastSelectRef.current < 45000) return;
+        lastSelectRef.current = Date.now();
+        sayText(pickLine(cfgRef.current.selectLines, cfgRef.current.petName));
+      }, 600);
+    };
+    const onScroll = () => {
+      if (!cfgRef.current.scrollEnabled || !cfgRef.current.enabled) return;
+      if (pageEndDoneRef.current) return;
+      const doc = document.documentElement;
+      const scrolled = doc.scrollTop || document.body.scrollTop;
+      const max = doc.scrollHeight - window.innerHeight;
+      // 页面足够长且用户接近底部
+      if (doc.scrollHeight > window.innerHeight * 1.2 && max > 0 && scrolled >= max - 120) {
+        let retries = 0;
+        const trySay = () => {
+          if (!cfgRef.current.scrollEnabled || !cfgRef.current.enabled) return;
+          // 气泡占用中则稍后重试(最多 ~15s), 避免"读完没奖励"
+          if (bubbleFullRef.current) {
+            if (retries++ < 18) {
+              setTimeout(trySay, 800);
+            }
+            return;
+          }
+          pageEndDoneRef.current = true;
+          sayText(pickLine(cfgRef.current.scrollLines, cfgRef.current.petName));
+        };
+        setTimeout(trySay, 500);
+      }
+    };
+    document.addEventListener("selectionchange", onSelection);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      document.removeEventListener("selectionchange", onSelection);
+      window.removeEventListener("scroll", onScroll);
+      if (selTimerRef.current) clearTimeout(selTimerRef.current);
+      selTimerRef.current = null;
+    };
+  }, [sayText]);
 
   // ── 欢迎(每 session 一次) ──
   useEffect(() => {
@@ -430,6 +515,7 @@ export default function PetCat() {
           if (clicksRef.current.length >= ANGRY_COUNT) {
             clicksRef.current = [];
             setAnim({ name: "angry", ts: now });
+            playPetMotion();
             sayText(pickLine(cfgRef.current.angryLines, cfgRef.current.petName));
             resetIdle();
             return;
@@ -442,7 +528,7 @@ export default function PetCat() {
         }
       }
     },
-    [canvas, positionUi, closeBubble, doClick]
+    [canvas, positionUi, closeBubble, doClick, playPetMotion]
   );
 
   // ── 渲染 ──
@@ -475,7 +561,10 @@ export default function PetCat() {
           position={cfg.position}
           bottomOffset={cfg.bottomOffset}
           isTouch={isTouch}
-          onReady={(c) => setCanvas(c)}
+          onReady={(c) => {
+            canvasRef.current = c;
+            setCanvas(c);
+          }}
         />
       )}
       {canvas && (

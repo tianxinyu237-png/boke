@@ -1,16 +1,20 @@
 "use client";
 
 /**
- * Live2D 纯渲染器(瘦身版, 2026-09-07)
- * 只负责: 加载 L2Dwidget 老库 → init 模型 → 把 canvas 交给外层。
- * 所有对话/互动/动画/好感度都在 pet-cat.tsx 外层实现。
+ * Live2D 渲染器 v2 —— pixi-live2d-display (2026-09-07 二期)
+ * 一期用 2018 年老库 live2d-widget(只能播放模型自带 idle, 无法按需触发动作)。
+ * 二期换 pixi-live2d-display@0.4 + live2d.min.js(Cubism 2.1 core), 支持:
+ *   - 按需触发真实动作 model.motion('', idx) (hijiki 的 01~08.mtn)
+ *   - 空闲随机小动作(舔毛/伸腰等)
+ *   - 点击命中测试(模型 json 需含 hit_areas)
+ * 渲染管线运行时注入 public/live2d/vendor/(不进 Next bundle):
+ *   live2d.min.js → pixi.min.js → cubism2.min.js (全局: Live2D / PIXI / PIXI.live2d)
  *
- * 移动端缩放策略(实测库行为后确定):
- * 老库 mobile.scale 只缩放"模型逻辑视口"(canvas 元素尺寸不变), 且
- * `!mobile.show && UA.isMobile()` 会短路跳过初始化。因此本渲染器
- * 固定传 mobile:{show:true, scale:1} 保证任何设备都初始化, 触屏设备
- * 由本层直接改 canvas CSS width/height 实现整体缩放(不动 transform,
- * 避免与外层 jump/eat 动画及桌面拖拽的 transform 冲突)。
+ * 并发/生命周期: pixi 实例是模块级共享单例(sharedPet)。
+ * React StrictMode 的 dev 双挂载 / 配置切换 / 隐藏恢复 都走同一套幂等逻辑:
+ *   挂载 → 已有同 key 实例则复用; 不同 key 则销毁重建; 卸载 → 延迟 120ms 销毁
+ *   (strict 双挂载间隔为微秒级, 延迟销毁可被复用路径取消, 不闪不重建)。
+ * 对外接口与一期一致: 自行创建 canvas(fixed 定位), onReady(canvas)。
  */
 import { useEffect, useRef } from "react";
 
@@ -26,18 +30,197 @@ export interface Live2DRendererProps {
   bottomOffset: number;
   /** 当前是否为触屏设备 */
   isTouch: boolean;
-  /** canvas 就绪回调(已设置 z-index/pointer-events) */
+  /** canvas 就绪回调(已设置 z-index/样式, 且挂好 __petMotion) */
   onReady: (canvas: HTMLElement) => void;
   onError?: () => void;
 }
 
-/** 渲染器需要高于粒子 canvas(z 2147483000) */
 export const PET_CANVAS_Z = 2147483001;
 export const PET_UI_Z = 2147483002;
 
-function cleanupCanvas() {
-  const old = document.getElementById("live2dcanvas");
-  if (old) old.remove();
+const VENDOR_LOCAL = [
+  "/live2d/vendor/live2d.min.js",
+  "/live2d/vendor/pixi.min.js",
+  "/live2d/vendor/cubism2.min.js",
+];
+const VENDOR_CDN = [
+  "https://cdn.jsdelivr.net/gh/dylanNew/live2d/webgl/Live2D/lib/live2d.min.js",
+  "https://cdn.jsdelivr.net/npm/pixi.js@6.5.10/dist/browser/pixi.min.js",
+  "https://cdn.jsdelivr.net/npm/pixi-live2d-display@0.4.0/dist/cubism2.min.js",
+];
+
+let vendorPromise: Promise<void> | null = null;
+
+function loadScript(src: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const s = document.createElement("script");
+    s.src = src;
+    s.async = true;
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error("script load failed: " + src));
+    document.head.appendChild(s);
+  });
+}
+
+function ensureVendor(): Promise<void> {
+  if (vendorPromise) return vendorPromise;
+  vendorPromise = (async () => {
+    const w = window as any;
+    if (typeof w.Live2D === "undefined") {
+      try {
+        await loadScript(VENDOR_LOCAL[0]);
+      } catch {
+        await loadScript(VENDOR_CDN[0]);
+      }
+    }
+    if (typeof w.PIXI === "undefined") {
+      try {
+        await loadScript(VENDOR_LOCAL[1]);
+      } catch {
+        await loadScript(VENDOR_CDN[1]);
+      }
+    }
+    if (!(w.PIXI && w.PIXI.live2d)) {
+      try {
+        await loadScript(VENDOR_LOCAL[2]);
+      } catch {
+        await loadScript(VENDOR_CDN[2]);
+      }
+    }
+  })();
+  return vendorPromise;
+}
+
+// ── 共享单例 ──
+
+interface PetHandle {
+  key: string;
+  canvas: HTMLCanvasElement;
+  app: any;
+  idleTimer: ReturnType<typeof setInterval> | null;
+}
+
+let sharedPet: PetHandle | null = null;
+let destroyTimer: ReturnType<typeof setTimeout> | null = null;
+
+function destroyPet(p: PetHandle) {
+  if (p.idleTimer) clearInterval(p.idleTimer);
+  try {
+    p.app?.destroy(true, { children: true });
+  } catch {
+    /* noop */
+  }
+  if (p.canvas.parentNode) p.canvas.remove();
+}
+
+function scheduleDestroy(ms = 120) {
+  if (destroyTimer) clearTimeout(destroyTimer);
+  destroyTimer = setTimeout(() => {
+    destroyTimer = null;
+    if (sharedPet) {
+      destroyPet(sharedPet);
+      sharedPet = null;
+    }
+  }, ms);
+}
+
+function cancelDestroy() {
+  if (destroyTimer) {
+    clearTimeout(destroyTimer);
+    destroyTimer = null;
+  }
+}
+
+interface CreateOpts {
+  modelPath: string;
+  cssW: number;
+  cssH: number;
+  mobileScale: number;
+  position: "left" | "right";
+  bottomOffset: number;
+  isTouch: boolean;
+}
+
+function randMotionIdx(): number {
+  return Math.floor(Math.random() * 8);
+}
+
+async function createPet(o: CreateOpts): Promise<PetHandle> {
+  await ensureVendor();
+  const w: any = window;
+  const PIXI = w.PIXI;
+  const Live2DModel = PIXI.live2d.Live2DModel;
+  const MotionPriority = PIXI.live2d.MotionPriority;
+  const logicalW = o.cssW * 2;
+  const logicalH = o.cssH * 2;
+
+  const canvas = document.createElement("canvas");
+  canvas.id = "live2dcanvas";
+  canvas.style.position = "fixed";
+  canvas.style.zIndex = String(PET_CANVAS_Z);
+  canvas.style.opacity = "1";
+  canvas.style.transition = "opacity 0.4s ease";
+  canvas.style.pointerEvents = "none";
+  if (o.position === "left") canvas.style.left = "0px";
+  else canvas.style.right = "0px";
+  canvas.style.bottom = `${20 + o.bottomOffset}px`;
+  // 触屏按 mobileScale 缩小 CSS 尺寸(渲染分辨率不变), 保持底部贴齐
+  if (o.isTouch && o.mobileScale !== 1) {
+    canvas.style.width = `${Math.round(o.cssW * o.mobileScale)}px`;
+    canvas.style.height = `${Math.round(o.cssH * o.mobileScale)}px`;
+  } else {
+    canvas.style.width = `${o.cssW}px`;
+    canvas.style.height = `${o.cssH}px`;
+  }
+  document.body.appendChild(canvas);
+
+  const app = new PIXI.Application({
+    view: canvas,
+    width: logicalW,
+    height: logicalH,
+    resolution: 1,
+    backgroundAlpha: 0,
+    antialias: true,
+    autoStart: true,
+  });
+
+  const rel = o.modelPath.replace(/^\/?live2d\/models\//, "").replace(/^\//, "");
+  const model = await Live2DModel.from(`/live2d/models/${rel}`, { autoUpdate: true });
+  if (model.automator) {
+    model.automator.autoHitTest = false;
+    model.automator.autoFocus = false;
+  }
+  model.anchor.set(0.5, 1);
+  const mh = model.height || logicalH;
+  model.scale.set(logicalH / mh);
+  model.position.set(logicalW / 2, logicalH);
+  app.stage.addChild(model);
+
+  const idleTimer = setInterval(() => {
+    try {
+      model.motion("", randMotionIdx(), MotionPriority.NORMAL);
+    } catch {
+      /* noop */
+    }
+  }, 12000 + Math.random() * 8000);
+
+  // 外层(点击/抚摸/喂食/生气)调用的真实动作入口
+  (canvas as any).__petMotion = () => {
+    try {
+      model.motion("", randMotionIdx(), MotionPriority.FORCE);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  return { key: "", canvas, app, idleTimer };
+}
+
+function buildKey(o: CreateOpts): string {
+  return JSON.stringify([
+    o.modelPath, o.cssW, o.cssH, o.mobileScale, o.position, o.bottomOffset, o.isTouch,
+  ]);
 }
 
 export default function Live2DRenderer({
@@ -50,112 +233,53 @@ export default function Live2DRenderer({
   onReady,
   onError,
 }: Live2DRendererProps) {
-  const startedRef = useRef(false);
-  const cancelledRef = useRef(false);
   const cbRef = useRef({ onReady, onError });
   cbRef.current = { onReady, onError };
 
   useEffect(() => {
-    cancelledRef.current = false;
-    startedRef.current = false;
-    let pollTimer: ReturnType<typeof setInterval> | null = null;
-    let script: HTMLScriptElement | null = null;
+    const cssW = Math.round(width);
+    const cssH = Math.round(width * 2);
+    const opts: CreateOpts = { modelPath, cssW, cssH, mobileScale, position, bottomOffset, isTouch };
+    const key = buildKey(opts);
+    let cancelled = false;
 
-    function normalizePath(p: string): string {
-      return p.replace(/^\/?live2d\/models\//, "").replace(/^\//, "");
-    }
-
-    function start() {
-      if (cancelledRef.current || startedRef.current) return;
-      // @ts-ignore
-      if (typeof L2Dwidget === "undefined") return;
-      startedRef.current = true;
-      cleanupCanvas();
-      // @ts-ignore
-      L2Dwidget.init({
-        pluginRootPath: "/live2d/",
-        pluginJsPath: "/live2d/",
-        pluginModelPath: "/live2d/models/",
-        model: { jsonPath: normalizePath(modelPath), scale: 1 },
-        display: {
-          superSample: 2,
-          width,
-          height: Math.round(width * 2),
-          position,
-          hOffset: 0,
-          vOffset: -(20 + bottomOffset),
-        },
-        // 固定 show:true(防 UA mobile + show:false 短路不渲染), scale 由本层 CSS 缩放
-        mobile: { show: true, scale: 1 },
-        react: { opacityDefault: 1, opacityOnHover: 1 },
-        dialog: { enable: false },
-      });
-      // 轮询等待 canvas 出现(模型加载完成)
-      let tries = 0;
-      pollTimer = setInterval(() => {
-        if (cancelledRef.current) return;
-        const canvas = document.getElementById("live2dcanvas");
-        if (canvas) {
-          if (pollTimer) clearInterval(pollTimer);
-          canvas.style.zIndex = String(PET_CANVAS_Z);
-          canvas.style.opacity = "1";
-          canvas.style.transition = "opacity 0.4s ease";
-          // 库的 canvas CSS 尺寸设置时机不可靠(模型加载回调), 这里无条件显式控制:
-          // 桌面 = display 尺寸; 触屏 = ×mobileScale 且容器内底对齐(视觉+命中一致, 不碰 transform)
-          const fullH = Math.round(width * 2);
-          if (isTouch && mobileScale !== 1) {
-            const cssH = Math.round(fullH * mobileScale);
-            canvas.style.width = `${Math.round(width * mobileScale)}px`;
-            canvas.style.height = `${cssH}px`;
-            canvas.style.top = `${fullH - cssH}px`;
-          } else {
-            canvas.style.width = `${width}px`;
-            canvas.style.height = `${fullH}px`;
-            canvas.style.top = "0px";
-          }
-          cbRef.current.onReady(canvas);
-        } else if (++tries > 60) {
-          if (pollTimer) clearInterval(pollTimer);
-          cbRef.current.onError?.();
-        }
-      }, 150);
-    }
-
-    function tryStart() {
-      // @ts-ignore
-      if (typeof L2Dwidget !== "undefined") {
-        start();
+    (async () => {
+      // 同 key 实例已存在(复用挂起销毁 / strict 双挂载 / 隐藏恢复) → 直接复用
+      if (sharedPet && sharedPet.key === key) {
+        cancelDestroy();
+        if (!cancelled) cbRef.current.onReady(sharedPet.canvas);
         return;
       }
-      const s = document.createElement("script");
-      s.src = "/live2d/L2Dwidget.min.js";
-      s.async = true;
-      s.onload = start;
-      s.onerror = () => {
-        const cdn = document.createElement("script");
-        cdn.src = "https://cdn.jsdelivr.net/npm/live2d-widget@3.1.4/lib/L2Dwidget.min.js";
-        cdn.async = true;
-        cdn.onload = start;
-        cdn.onerror = () => cbRef.current.onError?.();
-        document.body.appendChild(cdn);
-      };
-      document.body.appendChild(s);
-      script = s;
-    }
-
-    tryStart();
+      // 不同 key → 销毁旧实例
+      if (sharedPet) {
+        destroyPet(sharedPet);
+        sharedPet = null;
+      }
+      cancelDestroy();
+      let pet: PetHandle | null = null;
+      try {
+        pet = await createPet(opts);
+        pet.key = key;
+      } catch (e) {
+        console.error("[pet] live2d init failed:", e);
+        if (!cancelled) cbRef.current.onError?.();
+        return;
+      }
+      if (cancelled) {
+        destroyPet(pet);
+        return;
+      }
+      sharedPet = pet;
+      cbRef.current.onReady(pet.canvas);
+    })();
 
     return () => {
-      cancelledRef.current = true;
-      if (pollTimer) clearInterval(pollTimer);
-      if (script) script.remove();
-      // 延迟清理, 避免 init 异步完成后又把 canvas 建回来
-      setTimeout(() => {
-        if (cancelledRef.current) cleanupCanvas();
-      }, 100);
+      cancelled = true;
+      // 卸载 → 延迟销毁; 若马上又挂载(同 key)会被复用路径取消
+      if (sharedPet) scheduleDestroy(120);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [modelPath, width, position, bottomOffset, isTouch, mobileScale]);
+  }, [modelPath, width, mobileScale, position, bottomOffset, isTouch]);
 
   return null;
 }

@@ -35,6 +35,11 @@ export interface PetConfig {
   feelingsEnabled: boolean; // 好感度开关
   dailyMax: number; // 每日好感度加成上限
   dragEnabled: boolean;
+  // 彩蛋互动(二期)
+  selectEnabled: boolean; // 划词夸赞
+  scrollEnabled: boolean; // 读到文末冒泡
+  selectLines: string;
+  scrollLines: string;
 }
 
 export const PET_MODELS = [
@@ -117,6 +122,20 @@ export const DEFAULT_PET: PetConfig = {
   feelingsEnabled: true,
   dailyMax: 20,
   dragEnabled: true,
+  selectEnabled: true,
+  scrollEnabled: true,
+  selectLines: [
+    "好眼光！这段我也觉得是精华",
+    "划线了？这是要划重点吗",
+    "嘿嘿，你选中了干货",
+    "记下来记下来，以后要考的",
+  ].join("\n"),
+  scrollLines: [
+    "一口气读到这里，辛苦啦～",
+    "到底啦！这篇是不是很有收获",
+    "读完啦？要不要看看其他文章",
+    "翻到底了，给你递个枕头(递)",
+  ].join("\n"),
 };
 
 export const CONFIG_KEY = "devlog-pet-config";
@@ -139,6 +158,8 @@ export function normalizeConfig(parsed: Partial<PetConfig> | null | undefined): 
   if (!isBool(c.idleEnabled)) c.idleEnabled = DEFAULT_PET.idleEnabled;
   if (!isBool(c.feelingsEnabled)) c.feelingsEnabled = DEFAULT_PET.feelingsEnabled;
   if (!isBool(c.dragEnabled)) c.dragEnabled = DEFAULT_PET.dragEnabled;
+  if (!isBool(c.selectEnabled)) c.selectEnabled = DEFAULT_PET.selectEnabled;
+  if (!isBool(c.scrollEnabled)) c.scrollEnabled = DEFAULT_PET.scrollEnabled;
   if (!isStr(c.pageMode) || !["all", "include", "exclude"].includes(c.pageMode)) c.pageMode = DEFAULT_PET.pageMode;
   if (!isStr(c.position) || !["left", "right"].includes(c.position)) c.position = DEFAULT_PET.position;
   if (!isNum(c.bottomOffset)) c.bottomOffset = DEFAULT_PET.bottomOffset;
@@ -161,6 +182,8 @@ export function normalizeConfig(parsed: Partial<PetConfig> | null | undefined): 
   if (!isStr(c.idleLines)) c.idleLines = "";
   if (!isStr(c.angryLines)) c.angryLines = "";
   if (!isStr(c.levelUpLines)) c.levelUpLines = "";
+  if (!isStr(c.selectLines)) c.selectLines = "";
+  if (!isStr(c.scrollLines)) c.scrollLines = "";
   return c;
 }
 
@@ -322,3 +345,107 @@ export function matchPage(pathname: string, mode: PetConfig["pageMode"], include
   // exclude
   return !toList(excludeRaw).some((p) => toRe(p).test(pathname));
 }
+
+// ── 性格模板(后台一键覆盖语库, 2026-09-07 二期) ──
+
+export interface PetPersonality {
+  name: string;
+  icon: string;
+  desc: string;
+  lines: {
+    welcomeLines: string;
+    clickLines: string;
+    petLines: string;
+    feedLines: string;
+    idleLines: string;
+    angryLines: string;
+    levelUpLines: string;
+    selectLines: string;
+    scrollLines: string;
+  };
+}
+
+const t = (arr: string[]) => arr.join("\n");
+
+export const PERSONALITIES: PetPersonality[] = [
+  {
+    name: "软萌系",
+    icon: "🐱",
+    desc: "乖巧粘人，治愈系(与默认风格接近)",
+    lines: {
+      welcomeLines: t(["欢迎来到我的博客，喵～", "你来啦！今天想看点什么？", "你好呀～我是{name}，陪你逛博客"]),
+      clickLines: t(["喵？叫我干嘛～", "别点啦，再点我要害羞了！", "嘿嘿，被发现了～", "要不要去看看其他文章？"]),
+      petLines: t(["喵呜～好舒服……", "呼噜呼噜……再摸摸", "蹭蹭你～", "最喜欢被摸头了"]),
+      feedLines: t(["小鱼干！谢谢投喂！", "咔嚓咔嚓……好吃！", "唔姆，记住你的味道了", "嘿嘿，好感度又涨啦"]),
+      idleLines: t(["今天也要加油哦～", "代码写累了就休息一下吧", "这篇文章写得真认真呢", "摸摸鱼，看看窗外吧"]),
+      angryLines: t(["喵！再戳我要生气了！", "别闹了啦！", "你当我是玩具吗！", "哼！暂时不理你三秒"]),
+      levelUpLines: t(["我们已经是「%s」啦！", "羁绊升级：%s！以后多多关照喵"]),
+      selectLines: t(["好眼光！这段我也觉得是精华", "划线了？要划重点吗", "嘿嘿，你选中了干货", "记下来记下来，以后要考的"]),
+      scrollLines: t(["一口气读到这里，辛苦啦～", "到底啦！这篇是不是很有收获", "读完啦？要不要看看其他文章", "翻到底了，给你递个枕头(递)"]),
+    },
+  },
+  {
+    name: "傲娇系",
+    icon: "😼",
+    desc: "嘴硬心软，嫌弃但很在意你",
+    lines: {
+      welcomeLines: t(["哼，来了啊。", "我可没有在等你……只是刚好在这。", "想逛就逛，别指望我夸你。"]),
+      clickLines: t(["干嘛！别戳我。", "喂，动手动脚的小心我挠你。", "哼……看在你常来的份上，不跟你计较。"]),
+      petLines: t(["才、才没有很舒服呢！", "不许摸头！……好吧，勉强准了。", "你手好暖和……咳，我是说爪子！"]),
+      feedLines: t(["小鱼干？算你有心。", "哼，以为这样就能收买我？……真香。", "下次多带点，听见没。"]),
+      idleLines: t(["代码写完了吗就搁这看我？", "累了就休息，我可不想看你猝死。", "这篇写得还行……就一点点。"]),
+      angryLines: t(["够了！我真的要生气了！", "你再戳一下试试看！", "烦死了！哼！"]),
+      levelUpLines: t(["哼，「%s」……少得意，我才没有很在意。", "羁绊升级：%s？……随你高兴。"]),
+      selectLines: t(["哼，眼光还行。", "这段倒是值得划线。", "不错……勉强夸你一下。"]),
+      scrollLines: t(["读完了？还行吧，没白看。", "到底了。哼，还挺认真。", "看完就关了吧……记得常来。"]),
+    },
+  },
+  {
+    name: "高冷系",
+    icon: "🧊",
+    desc: "惜字如金，偶尔一句戳中你",
+    lines: {
+      welcomeLines: t(["你来了。", "随意看。", "……"]),
+      clickLines: t(["有事？", "别闹。", "……嗯。"]),
+      petLines: t(["……随你。", "嗯。", "够了。"]),
+      feedLines: t(["谢了。", "味道尚可。", "有心。"]),
+      idleLines: t(["专注。", "该休息了。", "写得可以。"]),
+      angryLines: t(["过了。", "收手。", "……哼。"]),
+      levelUpLines: t(["「%s」……随你高兴。", "%s？……也好。"]),
+      selectLines: t(["这段不错。", "值得划线。", "嗯。"]),
+      scrollLines: t(["读完了。", "到底了。", "不赖。"]),
+    },
+  },
+  {
+    name: "元气系",
+    icon: "🌞",
+    desc: "热情夸夸怪，行走的小太阳",
+    lines: {
+      welcomeLines: t(["嗨嗨！你来啦！", "欢迎光临！今天也元气满满！", "想我了没？我可想你了！"]),
+      clickLines: t(["嘿嘿！陪你玩！", "再来一次再来一次！", "戳我干嘛，要我跳舞吗？"]),
+      petLines: t(["好舒服！继续继续！", "嘿嘿嘿，幸福到冒泡！", "摸摸头，好运到！"]),
+      feedLines: t(["哇！小鱼干！爱你！", "咔嚓咔嚓——幸福感爆棚！", "你是世界上最好的铲屎官！"]),
+      idleLines: t(["加油加油！你超棒的！", "写累了就伸个懒腰吧！", "今天也要开开心心哦！"]),
+      angryLines: t(["哇哇！好痒！别闹啦！", "哈哈哈……停下，我要笑死了！"]),
+      levelUpLines: t(["哇！我们已经是「%s」啦！超开心！", "羁绊升级：%s！耶——！"]),
+      selectLines: t(["哇这段写得太好了吧！", "好眼光！我也超爱这段！", "划线划得好！给你鼓掌！"]),
+      scrollLines: t(["读完啦！你好厉害！", "到底了！收获满满吧！", "耶！又陪你读完一篇！"]),
+    },
+  },
+  {
+    name: "慵懒系",
+    icon: "🍵",
+    desc: "摆烂摸鱼，能躺着绝不坐着",
+    lines: {
+      welcomeLines: t(["啊……你来啦。", "随便坐，我就不起来了。", "嗯？要逛博客啊，好哦。"]),
+      clickLines: t(["……干嘛。", "戳醒我了……", "别闹，我在晒太阳。"]),
+      petLines: t(["呼噜……呼噜……", "嗯～再揉揉。", "舒服……不想动了……"]),
+      feedLines: t(["吃的？张嘴……啊。", "嗯，谢了，不想动。", "放那吧，我一会吃。"]),
+      idleLines: t(["代码写不完的……歇会吧。", "你卷吧，我躺了。", "世上无难事，只要肯摸鱼。"]),
+      angryLines: t(["别戳了！我要睡觉！", "你打扰到我晒太阳了！", "再闹我咬你哦……哈欠。"]),
+      levelUpLines: t(["唔……「%s」啊，行吧，随你。", "%s？……行，算你厉害。"]),
+      selectLines: t(["这段……值得你划一下。", "嗯，有点东西。", "划吧划吧，我懒得动。"]),
+      scrollLines: t(["读完啦？累不累，歇会。", "到底了……我也看完你了。", "不错，比我想的认真。"]),
+    },
+  },
+];

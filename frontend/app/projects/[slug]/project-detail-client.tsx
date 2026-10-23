@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion, useReducedMotion } from "motion/react";
 import type { Project } from "@/lib/projects";
@@ -12,6 +13,29 @@ export default function ProjectDetailClient({
   html: string;
 }) {
   const reduce = useReducedMotion();
+  const [body, setBody] = useState(html);
+
+  // Render the markdown body on the client when the server didn't provide it.
+  useEffect(() => {
+    if (body || !project.longDesc) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/render-markdown", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ md: project.longDesc }),
+        });
+        const data = await res.json();
+        if (!cancelled && data.html) setBody(data.html);
+      } catch {
+        // keep basic info only
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [body, project.longDesc]);
 
   const isOnline = !!project.url && project.url.startsWith("http");
   const isWip = !isOnline && /进行中|规划|开发中|TODO/i.test(project.desc || "");
@@ -98,7 +122,7 @@ export default function ProjectDetailClient({
           <section className="mb-10">
             <article
               className="prose max-w-none text-text-secondary"
-              dangerouslySetInnerHTML={{ __html: html || "" }}
+              dangerouslySetInnerHTML={{ __html: body || "" }}
             />
           </section>
         )}

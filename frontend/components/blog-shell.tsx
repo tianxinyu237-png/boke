@@ -117,7 +117,7 @@ function NavLink({
   return (
     <a
       href={href}
-      className={`relative flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-2 rounded-lg text-sm transition-all duration-200 ${
+      className={`relative flex items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-2 min-h-[44px] min-w-[44px] rounded-lg text-sm transition-all duration-200 ${
         isActive
           ? "text-accent bg-accent/8 font-medium"
           : "text-white hover:bg-white/10"

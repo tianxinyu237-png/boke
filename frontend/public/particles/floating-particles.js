@@ -202,6 +202,12 @@
   }
 
   function isMobileViewport() {
+    // 桌面端(有 hover 能力)无论窗口多小都不算移动端 —— 修复 1366x768 笔记本/小窗口
+    // 被窄视口判定误杀导致粒子不显示的问题。
+    var canHover = window.matchMedia && window.matchMedia("(hover: hover)").matches;
+    if (canHover) {
+      return false;
+    }
     var coarsePointer = window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
     var narrowViewport = Math.min(window.innerWidth || 0, window.innerHeight || 0) <= 768;
     return coarsePointer || narrowViewport;

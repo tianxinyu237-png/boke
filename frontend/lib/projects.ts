@@ -102,3 +102,35 @@ export async function saveProjectsConfig(config: ProjectsConfig): Promise<boolea
     return false;
   }
 }
+
+/* ------------------------------------------------------------------ *
+ * Server-side helpers (used by server components / sitemap).
+ * Never import these from a "use client" module.
+ * ------------------------------------------------------------------ */
+
+const SERVER_API = "http://backend:8080/api";
+
+export async function loadProjectsConfigServer(): Promise<ProjectsConfig> {
+  try {
+    const res = await fetch(`${SERVER_API}/site-config`, { next: { revalidate: 300 } });
+    if (!res.ok) return DEFAULT_PROJECTS;
+    const data = await res.json();
+    if (!data.projectsConfig) return DEFAULT_PROJECTS;
+    const parsed =
+      typeof data.projectsConfig === "string" ? JSON.parse(data.projectsConfig) : data.projectsConfig;
+    if (Array.isArray(parsed.projects)) {
+      parsed.projects = parsed.projects.map((p: Project & { description?: string }) => ({
+        ...p,
+        desc: p.desc ?? p.description ?? "",
+      }));
+    }
+    return { ...DEFAULT_PROJECTS, ...parsed };
+  } catch {
+    return DEFAULT_PROJECTS;
+  }
+}
+
+export async function getProjectBySlugServer(slug: string): Promise<Project | null> {
+  const cfg = await loadProjectsConfigServer();
+  return cfg.projects.find((p) => p.slug === slug) ?? null;
+}

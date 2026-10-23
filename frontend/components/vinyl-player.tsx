@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence, useMotionValue } from "motion/react";
 import {
   Play, Pause, SkipForward, SkipBack, MusicNote, X,
@@ -52,8 +52,36 @@ export default function VinylPlayer() {
 
   const track = tracks[currentTrack] || { title: "暂无歌曲", artist: "", src: "" };
 
-  const x = useMotionValue(typeof window !== "undefined" ? window.innerWidth - 72 : 0);
-  const y = useMotionValue(typeof window !== "undefined" ? window.innerHeight - 180 : 0);
+  // Start at 0/0 so SSR and client markup match; position after mount,
+  // and re-clamp on resize / orientation change (otherwise the floating
+  // button can end up outside the viewport on narrow screens).
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+  const [positioned, setPositioned] = useState(false);
+
+  useEffect(() => {
+    const SIZE = 56; // floating button footprint
+    const place = (fresh: boolean) => {
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      if (fresh) {
+        x.set(Math.max(8, vw - 72));
+        y.set(Math.max(8, vh - 180));
+        setPositioned(true);
+        return;
+      }
+      x.set(Math.min(Math.max(x.get(), 8), Math.max(8, vw - SIZE - 8)));
+      y.set(Math.min(Math.max(y.get(), 8), Math.max(8, vh - SIZE - 8)));
+    };
+    place(!positioned);
+    const onResize = () => place(false);
+    window.addEventListener("resize", onResize);
+    window.addEventListener("orientationchange", onResize);
+    return () => {
+      window.removeEventListener("resize", onResize);
+      window.removeEventListener("orientationchange", onResize);
+    };
+  }, [x, y, positioned]);
   const dragConstraints = useRef<HTMLDivElement>(null);
 
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;

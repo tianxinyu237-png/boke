@@ -63,6 +63,17 @@ public class VisitorController {
         return Map.of("blocked", blocked);
     }
 
+    // ── 公开:返回当前请求者 IP(与 middleware 取 IP 逻辑一致, 供后台防误封自己) ──
+    @GetMapping("/my-ip")
+    public Map<String, Object> myIp(HttpServletRequest req) {
+        String forwarded = req.getHeader("x-forwarded-for");
+        String ip = forwarded != null && !forwarded.isBlank()
+                ? forwarded.split(",")[0].trim()
+                : req.getHeader("x-real-ip");
+        if (ip == null || ip.isBlank()) ip = req.getRemoteAddr();
+        return Map.of("ip", cut(ip, 64));
+    }
+
     // ── 以下为管理接口,需 X-Api-Key ──
     @GetMapping("/overview")
     public ResponseEntity<?> overview(HttpServletRequest req) {

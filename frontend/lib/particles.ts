@@ -90,12 +90,38 @@ export const DEFAULT_CONFIG: ParticleConfig = {
 };
 
 const STORAGE_KEY = "devlog-particle-config";
+const API_BASE = typeof window !== "undefined"
+  ? (process.env.NEXT_PUBLIC_API_URL || "/api")
+  : "/api";
+
+/** 类型防护: 合并默认值前校验字段类型, 防止旧格式/损坏的 localStorage 数据导致 .split() 崩溃 */
+function normalizeConfig(parsed: Partial<ParticleConfig>): ParticleConfig {
+  const merged: ParticleConfig = { ...DEFAULT_CONFIG, ...parsed };
+  if (typeof merged.includePaths !== "string") merged.includePaths = "";
+  if (typeof merged.excludePaths !== "string") merged.excludePaths = "";
+  if (typeof merged.effect !== "string") merged.effect = DEFAULT_CONFIG.effect;
+  if (typeof merged.cursorEffect !== "string") merged.cursorEffect = DEFAULT_CONFIG.cursorEffect;
+  if (typeof merged.cursorStyleTemplate !== "string") merged.cursorStyleTemplate = DEFAULT_CONFIG.cursorStyleTemplate;
+  if (typeof merged.color !== "string" || !merged.color.startsWith("#")) merged.color = DEFAULT_CONFIG.color;
+  if (typeof merged.pageMode !== "string" || !["all", "include", "exclude"].includes(merged.pageMode)) {
+    merged.pageMode = DEFAULT_CONFIG.pageMode;
+  }
+  if (typeof merged.count !== "number" || Number.isNaN(merged.count)) merged.count = DEFAULT_CONFIG.count;
+  if (typeof merged.opacity !== "number" || Number.isNaN(merged.opacity)) merged.opacity = DEFAULT_CONFIG.opacity;
+  if (typeof merged.speed !== "number" || Number.isNaN(merged.speed)) merged.speed = DEFAULT_CONFIG.speed;
+  if (typeof merged.zIndex !== "number" || Number.isNaN(merged.zIndex)) merged.zIndex = DEFAULT_CONFIG.zIndex;
+  if (typeof merged.enabled !== "boolean") merged.enabled = DEFAULT_CONFIG.enabled;
+  if (typeof merged.enableMobile !== "boolean") merged.enableMobile = DEFAULT_CONFIG.enableMobile;
+  if (typeof merged.cursorStyleEnabled !== "boolean") merged.cursorStyleEnabled = DEFAULT_CONFIG.cursorStyleEnabled;
+  if (typeof merged.cursorStyleImage !== "string") merged.cursorStyleImage = "";
+  return merged;
+}
 
 export function loadConfig(): ParticleConfig {
   if (typeof window === "undefined") return DEFAULT_CONFIG;
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return { ...DEFAULT_CONFIG, ...JSON.parse(raw) };
+    if (raw) return normalizeConfig(JSON.parse(raw));
   } catch {}
   return DEFAULT_CONFIG;
 }
@@ -103,4 +129,38 @@ export function loadConfig(): ParticleConfig {
 export function saveConfig(config: ParticleConfig) {
   if (typeof window === "undefined") return;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+}
+
+/** 从服务器加载粒子配置(跨设备持久化) */
+export async function loadParticleConfigFromServer(): Promise<ParticleConfig | null> {
+  try {
+    const res = await fetch(`${API_BASE}/site-config`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (data.particleConfig) {
+      const parsed = typeof data.particleConfig === "string"
+        ? JSON.parse(data.particleConfig)
+        : data.particleConfig;
+      if (parsed && typeof parsed === "object") return normalizeConfig(parsed);
+    }
+  } catch {}
+  return null;
+}
+
+/** 保存粒子配置到服务器(需要 admin token) */
+export async function saveParticleConfigToServer(config: ParticleConfig): Promise<boolean> {
+  try {
+    const token = localStorage.getItem("admin_token");
+    const res = await fetch(`${API_BASE}/site-config`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { "X-Api-Key": token } : {}),
+      },
+      body: JSON.stringify({ particleConfig: JSON.stringify(config) }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
 }

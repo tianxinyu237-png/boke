@@ -114,6 +114,93 @@ export default function ProjectsEditor({ projects, onChange }: Props) {
   const hasDetail = (p: Project) =>
     !!(p.longDesc || (p.features && p.features.length) || (p.screenshots && p.screenshots.length) || (p.links && p.links.length));
 
+  // 编辑/新增共用的表单(editing 非 null 时才可调用)
+  function renderForm() {
+    if (!editing) return null;
+    return (
+      <div className="border-t border-border p-4 space-y-3 bg-bg-mute/30">
+        <AdminInput
+          label="项目名称"
+          value={editing.draft.name}
+          onChange={(e) => updateDraft({ name: e.target.value })}
+          placeholder="如:devlog 博客"
+        />
+        <AdminInput
+          label="链接(留空则不跳转)"
+          value={editing.draft.url || ""}
+          onChange={(e) => updateDraft({ url: e.target.value })}
+          placeholder="https:// 或站内路径,如 /"
+        />
+        <AdminTextarea
+          label="一句话简介(列表卡片显示)"
+          value={editing.draft.desc}
+          onChange={(e) => updateDraft({ desc: e.target.value })}
+          placeholder="一句话介绍这个项目"
+          rows={2}
+        />
+        <AdminInput
+          label="标签(逗号分隔)"
+          value={(editing.draft.tags || []).join(", ")}
+          onChange={(e) =>
+            updateDraft({ tags: e.target.value.split(/[,，]/).map((s) => s.trim()).filter(Boolean) })
+          }
+          placeholder="Next.js, Spring Boot, Docker"
+        />
+
+        {/* 详情内容 */}
+        <details className="border border-border rounded-lg bg-bg-soft/60 overflow-hidden">
+          <summary className="px-3.5 py-2.5 text-xs font-medium text-text-secondary cursor-pointer hover:text-text-primary transition-colors select-none flex items-center gap-2">
+            <span>📄 详情页内容(可选)</span>
+            <span className="text-[10px] text-text-muted font-normal">
+              {hasDetail(editing.draft) ? "已填写" : "未填写"}
+            </span>
+          </summary>
+          <div className="border-t border-border px-3.5 py-3 space-y-3">
+            <AdminInput
+              label="详情页地址 slug(留空自动按名称生成)"
+              value={editing.draft.slug || ""}
+              onChange={(e) => updateDraft({ slug: e.target.value })}
+              placeholder={genSlug(editing.draft.name) || "devlog-blog"}
+            />
+            <AdminTextarea
+              label="详细介绍(支持 Markdown:标题/列表/代码块/表格)"
+              value={editing.draft.longDesc || ""}
+              onChange={(e) => updateDraft({ longDesc: e.target.value })}
+              placeholder={"## 项目背景\n\n介绍这个项目...\n\n```bash\nnpm run dev\n```"}
+              rows={7}
+            />
+            <AdminTextarea
+              label="特性亮点(每行一条,详情页 ✓ 列表展示)"
+              value={(editing.draft.features || []).join("\n")}
+              onChange={(e) => updateDraft({ features: linesToArray(e.target.value) })}
+              placeholder={"暗色/亮色双主题\nMarkdown 实时渲染\nLive2D 看板娘"}
+              rows={4}
+            />
+            <AdminTextarea
+              label="截图/封面图 URL(每行一个,详情页画廊展示)"
+              value={(editing.draft.screenshots || []).join("\n")}
+              onChange={(e) => updateDraft({ screenshots: linesToArray(e.target.value) })}
+              placeholder="https://example.com/screenshot1.png"
+              rows={3}
+            />
+            <AdminTextarea
+              label="附加链接(每行:名称|网址,详情页按钮展示)"
+              value={(editing.draft.links || []).map((l) => `${l.label}|${l.url}`).join("\n")}
+              onChange={(e) => updateDraft({ links: parseLinks(e.target.value) })}
+              placeholder={"GitHub 源码|https://github.com/xxx\n在线演示|https://demo.xxx.com"}
+              rows={3}
+            />
+          </div>
+        </details>
+
+        <div className="flex justify-end gap-2 pt-1">
+          <AdminButton variant="secondary" onClick={() => setEditing(null)}>取消</AdminButton>
+          <AdminButton onClick={commit}>{editing.index === -1 ? "添加项目" : "保存修改"}</AdminButton>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-3">
       {projects.length === 0 && (
@@ -176,91 +263,20 @@ export default function ProjectsEditor({ projects, onChange }: Props) {
               </div>
             </div>
 
-            {isEditing && (
-              <div className="border-t border-border p-4 space-y-3 bg-bg-mute/30">
-                <AdminInput
-                  label="项目名称"
-                  value={editing.draft.name}
-                  onChange={(e) => updateDraft({ name: e.target.value })}
-                  placeholder="如:devlog 博客"
-                />
-                <AdminInput
-                  label="链接(留空则不跳转)"
-                  value={editing.draft.url || ""}
-                  onChange={(e) => updateDraft({ url: e.target.value })}
-                  placeholder="https:// 或站内路径,如 /"
-                />
-                <AdminTextarea
-                  label="一句话简介(列表卡片显示)"
-                  value={editing.draft.desc}
-                  onChange={(e) => updateDraft({ desc: e.target.value })}
-                  placeholder="一句话介绍这个项目"
-                  rows={2}
-                />
-                <AdminInput
-                  label="标签(逗号分隔)"
-                  value={(editing.draft.tags || []).join(", ")}
-                  onChange={(e) =>
-                    updateDraft({ tags: e.target.value.split(/[,，]/).map((s) => s.trim()).filter(Boolean) })
-                  }
-                  placeholder="Next.js, Spring Boot, Docker"
-                />
-
-                {/* 详情内容 */}
-                <details className="border border-border rounded-lg bg-bg-soft/60 overflow-hidden">
-                  <summary className="px-3.5 py-2.5 text-xs font-medium text-text-secondary cursor-pointer hover:text-text-primary transition-colors select-none flex items-center gap-2">
-                    <span>📄 详情页内容(可选)</span>
-                    <span className="text-[10px] text-text-muted font-normal">
-                      {hasDetail(editing.draft) ? "已填写" : "未填写"}
-                    </span>
-                  </summary>
-                  <div className="border-t border-border px-3.5 py-3 space-y-3">
-                    <AdminInput
-                      label="详情页地址 slug(留空自动按名称生成)"
-                      value={editing.draft.slug || ""}
-                      onChange={(e) => updateDraft({ slug: e.target.value })}
-                      placeholder={genSlug(editing.draft.name) || "devlog-blog"}
-                    />
-                    <AdminTextarea
-                      label="详细介绍(支持 Markdown:标题/列表/代码块/表格)"
-                      value={editing.draft.longDesc || ""}
-                      onChange={(e) => updateDraft({ longDesc: e.target.value })}
-                      placeholder={"## 项目背景\n\n介绍这个项目...\n\n```bash\nnpm run dev\n```"}
-                      rows={7}
-                    />
-                    <AdminTextarea
-                      label="特性亮点(每行一条,详情页 ✓ 列表展示)"
-                      value={(editing.draft.features || []).join("\n")}
-                      onChange={(e) => updateDraft({ features: linesToArray(e.target.value) })}
-                      placeholder={"暗色/亮色双主题\nMarkdown 实时渲染\nLive2D 看板娘"}
-                      rows={4}
-                    />
-                    <AdminTextarea
-                      label="截图/封面图 URL(每行一个,详情页画廊展示)"
-                      value={(editing.draft.screenshots || []).join("\n")}
-                      onChange={(e) => updateDraft({ screenshots: linesToArray(e.target.value) })}
-                      placeholder="https://example.com/screenshot1.png"
-                      rows={3}
-                    />
-                    <AdminTextarea
-                      label="附加链接(每行:名称|网址,详情页按钮展示)"
-                      value={(editing.draft.links || []).map((l) => `${l.label}|${l.url}`).join("\n")}
-                      onChange={(e) => updateDraft({ links: parseLinks(e.target.value) })}
-                      placeholder={"GitHub 源码|https://github.com/xxx\n在线演示|https://demo.xxx.com"}
-                      rows={3}
-                    />
-                  </div>
-                </details>
-
-                <div className="flex justify-end gap-2 pt-1">
-                  <AdminButton variant="secondary" onClick={() => setEditing(null)}>取消</AdminButton>
-                  <AdminButton onClick={commit}>{editing.index === -1 ? "添加项目" : "保存修改"}</AdminButton>
-                </div>
-              </div>
-            )}
+            {isEditing && renderForm()}
           </div>
         );
       })}
+
+      {/* 新增模式: index=-1 匹配不到任何卡片, 独立渲染在列表末尾 */}
+      {editing?.index === -1 && (
+        <div className="bg-bg-soft border border-border rounded-xl overflow-hidden">
+          <div className="px-4 pt-4 pb-1">
+            <h3 className="text-sm font-semibold text-text-primary">新项目</h3>
+          </div>
+          {renderForm()}
+        </div>
+      )}
 
       <AdminButton variant="secondary" onClick={startAdd} className="w-full">+ 添加项目</AdminButton>
 

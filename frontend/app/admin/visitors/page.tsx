@@ -59,6 +59,15 @@ export default function AdminVisitorsPage() {
   const [detailLogs, setDetailLogs] = useState<RecentLog[]>([]);
   const [blockTarget, setBlockTarget] = useState<RankRow | null>(null);
   const [loading, setLoading] = useState(true);
+  const [myIp, setMyIp] = useState<string>("");
+
+  useEffect(() => {
+    // 当前访问者 IP(与 middleware 同源), 用于防误封自己
+    fetch(`${API}/visitors/my-ip`)
+      .then((r) => r.json())
+      .then((d) => setMyIp(d?.ip || ""))
+      .catch(() => {});
+  }, []);
 
   const refresh = useCallback(async () => {
     try {
@@ -210,8 +219,9 @@ export default function AdminVisitorsPage() {
               {filteredRank.slice(0, 100).map((r) => {
                 const flag = flagOf(r, blockedIps);
                 const open = detailIp === r.ip;
+                const isMe = myIp !== "" && r.ip === myIp;
                 return (
-                  <FragmentRow key={r.ip} r={r} open={open} flag={flag}
+                  <FragmentRow key={r.ip} r={r} open={open} flag={flag} isMe={isMe}
                     onToggle={() => openDetail(r.ip)}
                     onBlock={() => setBlockTarget(r)}
                     onUnblock={() => doUnblock(r.ip)}
@@ -281,7 +291,19 @@ export default function AdminVisitorsPage() {
         open={blockTarget !== null}
         title="封禁 IP"
         message={blockTarget ? `确定封禁 ${blockTarget.ip} 吗?该 IP 访问博客将返回 403,24 小时后自动解封。` : ""}
-        confirmLabel="封禁 24h"
+        confirmLabel={blockTarget && myIp && blockTarget.ip === myIp ? "仍然封禁" : "封禁 24h"}
+        extra={
+          blockTarget && myIp && blockTarget.ip === myIp ? (
+            <div className="bg-red-500/10 border border-red-500/40 rounded-lg px-3 py-2.5 mb-1">
+              <p className="text-xs font-semibold text-red-400 mb-0.5">
+                ⚠️ 该 IP 与你当前使用的 IP 相同({myIp})
+              </p>
+              <p className="text-[11px] text-red-400/80 leading-relaxed">
+                封禁后你自己也会无法访问网站(包括此后台),需等 24 小时自动解封或从服务器手动解封。确认要封吗?
+              </p>
+            </div>
+          ) : undefined
+        }
         onConfirm={doBlock}
         onCancel={() => setBlockTarget(null)}
       />
@@ -289,9 +311,10 @@ export default function AdminVisitorsPage() {
   );
 }
 
-function FragmentRow({ r, open, flag, onToggle, onBlock, onUnblock, detailLogs, th, td }: {
+function FragmentRow({ r, open, flag, isMe, onToggle, onBlock, onUnblock, detailLogs, th, td }: {
   r: RankRow; open: boolean;
   flag: { label: string; cls: string } | null;
+  isMe: boolean;
   onToggle: () => void; onBlock: () => void; onUnblock: () => void;
   detailLogs: RecentLog[]; th: string; td: string;
 }) {
@@ -300,6 +323,7 @@ function FragmentRow({ r, open, flag, onToggle, onBlock, onUnblock, detailLogs, 
       <tr className="border-b border-border/40 hover:bg-bg-mute/40 cursor-pointer" onClick={onToggle}>
         <td className={`${td} font-mono text-text-primary`}>
           {r.ip}
+          {isMe && <span className="ml-2 px-1.5 py-0.5 rounded-full text-[10px] bg-accent/15 text-accent">我</span>}
           {open && <span className="ml-2 text-[10px] text-accent">▾</span>}
         </td>
         <td className={`${td} font-semibold ${r.count >= 100 ? "text-amber-400" : ""}`}>{r.count}</td>

@@ -5,6 +5,8 @@ import { showToast, AdminSkeleton } from "@/components/admin/ui";
 import {
   loadConfig,
   saveConfig,
+  saveParticleConfigToServer,
+  loadParticleConfigFromServer,
   type ParticleConfig,
   EFFECTS,
   CURSOR_EFFECTS,
@@ -16,7 +18,18 @@ export default function ParticleSettings() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    setConfig(loadConfig());
+    let cancelled = false;
+    // 优先读取服务器配置(跨设备), 本地缓存兜底
+    loadParticleConfigFromServer().then((remote) => {
+      if (cancelled) return;
+      if (remote) {
+        saveConfig(remote);
+        setConfig(remote);
+      } else {
+        setConfig(loadConfig());
+      }
+    });
+    return () => { cancelled = true; };
   }, []);
 
   function update<K extends keyof ParticleConfig>(key: K, value: ParticleConfig[K]) {
@@ -24,7 +37,7 @@ export default function ParticleSettings() {
     setSaving(false);
   }
 
-  function handleSave() {
+  async function handleSave(preview = false) {
     if (!config) return;
     setSaving(true);
     saveConfig(config);
@@ -54,8 +67,14 @@ export default function ParticleSettings() {
         },
       })
     );
+    // 同步到服务器(跨设备持久化)
+    const ok = await saveParticleConfigToServer(config);
     setSaving(false);
-    showToast("粒子设置已保存", "success");
+    showToast(
+      ok ? "粒子设置已保存并同步到服务器" : "已保存到本机，服务器同步失败",
+      ok ? "success" : "error"
+    );
+    if (preview) window.open("/", "_blank");
   }
 
   if (!config) return <AdminSkeleton variant="form" />;
@@ -65,14 +84,24 @@ export default function ParticleSettings() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-lg font-bold text-text-primary">粒子动效设置</h2>
-          <p className="text-text-muted text-xs mt-1">配置全站页面粒子效果和鼠标交互动效</p>
+          <p className="text-text-muted text-xs mt-1">配置全站页面粒子效果和鼠标交互动效，保存后同步到服务器（所有设备生效）</p>
         </div>
-        <button
-          onClick={handleSave}
-          className="bg-accent hover:bg-accent/80 text-white font-medium rounded-lg px-4 py-2 text-sm transition-colors"
-        >
-          {saving ? "保存中..." : "保存设置"}
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => handleSave(false)}
+            disabled={saving}
+            className="bg-accent hover:bg-accent/80 disabled:opacity-60 text-white font-medium rounded-lg px-4 py-2 text-sm transition-colors"
+          >
+            {saving ? "保存中..." : "保存设置"}
+          </button>
+          <button
+            onClick={() => handleSave(true)}
+            disabled={saving}
+            className="bg-bg-soft border border-border hover:border-accent text-text-primary font-medium rounded-lg px-4 py-2 text-sm transition-colors"
+          >
+            保存并预览
+          </button>
+        </div>
       </div>
 
       <div className="bg-bg-soft border border-border rounded-xl p-5 space-y-4">
@@ -227,7 +256,46 @@ export default function ParticleSettings() {
             className="w-28 bg-bg border border-border rounded px-2 py-1 text-xs text-text-primary"
           />
         </div>
+
+        {/* Page scope */}
+        <div className="flex items-center gap-3 pt-1 border-t border-border">
+          <label className="text-xs text-text-muted whitespace-nowrap">页面范围</label>
+          <select
+            value={config.pageMode}
+            onChange={(e) => update("pageMode", e.target.value as ParticleConfig["pageMode"])}
+            className="bg-bg border border-border rounded-lg px-3 py-1.5 text-xs text-text-primary focus:border-accent focus:outline-none"
+          >
+            <option value="all">全站显示</option>
+            <option value="include">仅指定页面</option>
+            <option value="exclude">排除指定页面</option>
+          </select>
+        </div>
+        {config.pageMode !== "all" && (
+          <div>
+            <label className="text-xs text-text-muted block mb-1">
+              {config.pageMode === "include"
+                ? "仅以下路径显示（每行一个，支持 * 通配，如 /about 或 /blog/*）"
+                : "以下路径不显示（每行一个，支持 * 通配，如 /admin 或 /projects/*）"}
+            </label>
+            <textarea
+              value={config.pageMode === "include" ? config.includePaths : config.excludePaths}
+              onChange={(e) =>
+                update(
+                  config.pageMode === "include" ? "includePaths" : "excludePaths",
+                  e.target.value
+                )
+              }
+              rows={3}
+              placeholder={"/about\n/blog/*"}
+              className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-xs text-text-primary font-mono focus:border-accent focus:outline-none resize-y"
+            />
+          </div>
+        )}
       </div>
+
+      <p className="text-text-muted text-xs">
+        提示：桌面端无论窗口大小都会显示粒子；手机/平板需勾选"启用移动端效果"。
+      </p>
     </div>
   );
 }

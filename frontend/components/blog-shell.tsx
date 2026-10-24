@@ -14,6 +14,7 @@ const navLinks = [
   { href: "/sum", label: "归档", icon: "box-archive" },
   { href: "/categories", label: "分类", icon: "folder" },
   { href: "/projects", label: "项目", icon: "code" },
+  { href: "/gamepad", label: "手柄", icon: "gamepad" },
   { href: "/notes", label: "笔记", icon: "book" },
   { href: "/links", label: "友链", icon: "link" },
   { href: "/moments", label: "碎碎念", icon: "chat" },
@@ -33,6 +34,15 @@ function NavIcon({ name }: { name: string }) {
       strokeLinejoin="round"
       viewBox="0 0 24 24"
     >
+      {name === "gamepad" && (
+        <>
+          <path d="M17.32 6.4a15 15 0 00-10.63 0A3 3 0 004.5 8.5L3.1 15.6a2.3 2.3 0 003.95 2.03L9.1 15.5h5.8l2.04 2.13a2.3 2.3 0 003.95-2.03l-1.4-7.1a3 3 0 00-2.17-2.1z" />
+          <path d="M6 12h4" />
+          <path d="M8 10v4" />
+          <circle cx="16.5" cy="10.5" r="1" />
+          <circle cx="18.5" cy="12.5" r="1" />
+        </>
+      )}
       {name === "house" && (
         <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
       )}

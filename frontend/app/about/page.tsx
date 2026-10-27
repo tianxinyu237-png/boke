@@ -4,14 +4,25 @@ import { useState, useEffect } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { useSiteConfig } from "@/components/site-config-provider";
 import { loadAboutConfig, type AboutConfig, DEFAULT_ABOUT } from "@/lib/about";
+import { loadLinksConfig, type LinksConfig, DEFAULT_LINKS } from "@/lib/links";
+
+// Secondary destinations that no longer live in the top nav
+const morePages = [
+  { href: "/categories", label: "按分类浏览", desc: "文章按分类聚合" },
+  { href: "/moments", label: "碎碎念", desc: "短想法和日常" },
+  { href: "/gamepad", label: "手柄", desc: "网页手柄测试工具" },
+  { href: "/photos", label: "照片", desc: "随手拍的一些画面" },
+];
 
 export default function AboutPage() {
   const reduce = useReducedMotion();
   const { config: SITE } = useSiteConfig();
   const [about, setAbout] = useState<AboutConfig>(DEFAULT_ABOUT);
+  const [links, setLinks] = useState<LinksConfig>(DEFAULT_LINKS);
 
   useEffect(() => {
     loadAboutConfig().then(setAbout);
+    loadLinksConfig().then(setLinks);
   }, []);
 
   const fadeUp = reduce
@@ -55,6 +66,23 @@ export default function AboutPage() {
           <p className="text-text-secondary text-sm leading-relaxed max-w-lg">
             {about.bio}
           </p>
+          <a
+            href="/resume"
+            className="inline-flex items-center gap-1.5 mt-4 text-sm text-accent hover:gap-2.5 transition-all"
+          >
+            查看完整简历
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              viewBox="0 0 24 24"
+            >
+              <path d="M5 12h14M13 6l6 6-6 6" />
+            </svg>
+          </a>
         </div>
       </motion.div>
 
@@ -114,6 +142,78 @@ export default function AboutPage() {
                 </svg>
               )}
               {link.label}
+            </a>
+          ))}
+        </div>
+      </motion.section>
+
+      {/* 友链 — 从顶部导航移到这里 */}
+      {links.friends.length > 0 && (
+        <motion.section
+          className="mt-12"
+          initial={reduce ? {} : { opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.4 }}
+        >
+          <div className="flex items-baseline justify-between mb-4">
+            <h2 className="text-lg font-semibold text-text-primary">友链</h2>
+            <a
+              href="/links"
+              className="text-xs text-text-muted hover:text-accent transition-colors"
+            >
+              全部友链 →
+            </a>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {links.friends.slice(0, 6).map((f) => (
+              <a
+                key={f.url}
+                href={f.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 bg-bg-soft border border-border rounded-xl px-3.5 py-3 hover:border-accent/30 transition-colors"
+              >
+                {f.avatar ? (
+                  <img
+                    src={f.avatar}
+                    alt={f.name}
+                    className="w-9 h-9 rounded-full object-cover shrink-0"
+                    loading="lazy"
+                  />
+                ) : (
+                  <div className="w-9 h-9 rounded-full bg-accent/10 text-accent text-xs font-bold flex items-center justify-center shrink-0">
+                    {f.name.slice(0, 1)}
+                  </div>
+                )}
+                <div className="min-w-0">
+                  <div className="text-sm font-medium text-text-primary truncate">
+                    {f.name}
+                  </div>
+                  <div className="text-xs text-text-muted truncate">{f.desc}</div>
+                </div>
+              </a>
+            ))}
+          </div>
+        </motion.section>
+      )}
+
+      {/* 更多 — 次要页面入口 */}
+      <motion.section
+        className="mt-12"
+        initial={reduce ? {} : { opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.5 }}
+      >
+        <h2 className="text-lg font-semibold text-text-primary mb-4">更多</h2>
+        <div className="grid grid-cols-2 gap-2">
+          {morePages.map((p) => (
+            <a
+              key={p.href}
+              href={p.href}
+              className="bg-bg-soft border border-border rounded-xl px-4 py-3 hover:border-accent/30 transition-colors"
+            >
+              <div className="text-sm font-medium text-text-primary">{p.label}</div>
+              <div className="text-xs text-text-muted mt-0.5">{p.desc}</div>
             </a>
           ))}
         </div>

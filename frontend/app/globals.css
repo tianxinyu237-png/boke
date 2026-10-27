@@ -421,3 +421,40 @@ body.has-custom-bg .backdrop-blur-2xl {
   50% { opacity: 0.75; }
 }
 .pet-dot { animation: pet-dot-breathe 3s ease-in-out infinite; }
+
+/* ══ 知识库正文(Obsidian vault 镜像)═════════════════════
+   callout 已转成 "> 💡 **标题** + 内容" 的引用块,
+   这里把它渲染成有背景的卡片,而不是默认的斜体引用 */
+.kb-note-body blockquote {
+  border-left: 3px solid rgb(var(--color-accent) / 0.55);
+  background: rgb(var(--color-accent) / 0.07);
+  border-radius: 0 0.75rem 0.75rem 0;
+  padding: 0.9rem 1.1rem;
+  margin: 1.25rem 0;
+  font-style: normal;
+  color: rgb(var(--color-text-secondary) / var(--color-text-secondary-alpha));
+}
+.kb-note-body blockquote p { margin: 0.35rem 0; }
+.kb-note-body blockquote p:first-child { margin-top: 0; }
+.kb-note-body blockquote p:last-child { margin-bottom: 0; }
+.kb-note-body blockquote blockquote {
+  margin: 0.6rem 0 0;
+  background: transparent;
+  border-left-color: rgb(var(--color-accent) / 0.3);
+  padding: 0.2rem 0 0.2rem 0.9rem;
+}
+.kb-note-body img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.75rem;
+  margin: 1.25rem auto;
+  display: block;
+}
+.kb-note-body table {
+  display: block;
+  overflow-x: auto;
+  max-width: 100%;
+}
+.kb-note-body h1, .kb-note-body h2, .kb-note-body h3 { scroll-margin-top: 5rem; }
+.kb-note-body a { color: rgb(var(--color-accent)); text-decoration: none; }
+.kb-note-body a:hover { text-decoration: underline; }

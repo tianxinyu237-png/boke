@@ -15,7 +15,11 @@ interface NoteData {
 
 async function getNote(id: string): Promise<NoteData | null> {
   try {
-    const api = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
+    const api =
+      process.env.INTERNAL_API_URL ||
+      (process.env.NODE_ENV === "production"
+        ? "http://backend:8080/api"
+        : "http://localhost:8080/api");
     const res = await fetch(`${api}/notes/${id}`, { next: { revalidate: 60 } });
     if (!res.ok) return null;
     return res.json();

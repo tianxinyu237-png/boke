@@ -11,16 +11,22 @@ import type { ReactNode } from "react";
 
 const navLinks = [
   { href: "/", label: "首页", icon: "house" },
-  { href: "/sum", label: "归档", icon: "box-archive" },
-  { href: "/categories", label: "分类", icon: "folder" },
+  { href: "/sum", label: "文章", icon: "box-archive" },
   { href: "/projects", label: "项目", icon: "code" },
-  { href: "/gamepad", label: "手柄", icon: "gamepad" },
   { href: "/notes", label: "笔记", icon: "book" },
-  { href: "/links", label: "友链", icon: "link" },
-  { href: "/moments", label: "碎碎念", icon: "chat" },
-  { href: "/resume", label: "简历", icon: "file-text" },
   { href: "/about", label: "关于", icon: "user" },
-  { href: "/search", label: "搜索", icon: "magnifying-glass" },
+];
+
+// Secondary destinations live in the footer (keeps the top bar calm)
+const footerLinks = [
+  { href: "/resume", label: "简历" },
+  { href: "/categories", label: "分类" },
+  { href: "/moments", label: "碎碎念" },
+  { href: "/links", label: "友链" },
+  { href: "/gamepad", label: "手柄" },
+  { href: "/photos", label: "照片" },
+  { href: "/search", label: "搜索" },
+  { href: "/rss", label: "RSS" },
 ];
 
 function NavIcon({ name }: { name: string }) {
@@ -193,28 +199,56 @@ export default function BlogShell({ children }: { children: ReactNode }) {
             <span className="text-sm sm:text-base">{SITE.name}</span>
           </motion.a>
 
-          <nav className="flex items-center gap-0 sm:gap-1 overflow-x-auto no-scrollbar min-w-0">
-            {navLinks.map((link) => (
-              <NavLink key={link.href} {...link} />
-            ))}
-            <RandomLink />
-            <div className="ml-1 sm:ml-2">
+          {/* Nav scrolls; theme toggle stays pinned so it's always reachable */}
+          <div className="flex items-center gap-1 sm:gap-1.5 min-w-0 flex-1 justify-end">
+            <nav className="flex items-center gap-1 sm:gap-1.5 overflow-x-auto no-scrollbar min-w-0">
+              {navLinks.map((link) => (
+                <NavLink key={link.href} {...link} />
+              ))}
+              <SearchLink />
+              <RandomLink />
+            </nav>
+            <div className="shrink-0">
               <ThemeToggle />
             </div>
-          </nav>
+          </div>
         </div>
       </header>
 
       <main className="flex-1 content-area">{children}</main>
 
       <footer className="border-t border-border mt-24">
-        <div className="max-w-5xl mx-auto px-6 py-8 flex items-center justify-between text-sm text-text-muted">
+        <div className="max-w-5xl mx-auto px-6 pt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-text-muted">
+          {footerLinks.map((link) => (
+            <a
+              key={link.href}
+              href={link.href}
+              className="hover:text-accent transition-colors py-1"
+            >
+              {link.label}
+            </a>
+          ))}
+        </div>
+        <div className="max-w-5xl mx-auto px-6 py-6 flex items-center justify-between text-sm text-text-muted">
           <span>{SITE.name} &copy; {new Date().getFullYear()}</span>
           <VisitorStats />
           <span>已运行 {Math.ceil((Date.now() - new Date(SITE.founded || SITE_STATIC.founded).getTime()) / 86400000)} 天</span>
         </div>
       </footer>
     </>
+  );
+}
+
+// ── 搜索入口:图标按钮,和随机/主题并排 ──
+function SearchLink() {
+  return (
+    <a
+      href="/search"
+      aria-label="搜索"
+      className="flex items-center justify-center min-h-[44px] min-w-[44px] rounded-lg text-text-muted hover:text-accent transition-colors"
+    >
+      <NavIcon name="magnifying-glass" />
+    </a>
   );
 }
 

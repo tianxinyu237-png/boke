@@ -5,7 +5,7 @@ import ArchiveContent from "./archive-content";
 export const revalidate = 60;
 
 export const metadata: Metadata = {
-  title: "归档",
+  title: "文章",
   description: "全部文章归档列表",
 };
 

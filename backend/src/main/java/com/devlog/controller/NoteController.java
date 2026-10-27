@@ -20,20 +20,37 @@ public class NoteController {
         this.noteRepository = noteRepository;
     }
 
-    /** GET /api/notes */
+    /** GET /api/notes
+     *  light=true 时只返回列表所需的元数据(content 截断成预览),
+     *  避免知识库列表把几十篇全文一次性塞给前端。
+     */
     @GetMapping
     public List<Note> getAllNotes(@RequestParam(required = false) String folder,
-                                   @RequestParam(required = false) String noteType) {
+                                   @RequestParam(required = false) String noteType,
+                                   @RequestParam(required = false, defaultValue = "false") boolean light) {
+        List<Note> notes;
         if (folder != null && !folder.isBlank()) {
             if (noteType != null && !noteType.isBlank()) {
-                return noteRepository.findByFolderAndNoteTypeOrderByUpdatedAtDesc(folder, noteType);
+                notes = noteRepository.findByFolderAndNoteTypeOrderByUpdatedAtDesc(folder, noteType);
+            } else {
+                notes = noteRepository.findByFolderOrderByUpdatedAtDesc(folder);
             }
-            return noteRepository.findByFolderOrderByUpdatedAtDesc(folder);
+        } else if (noteType != null && !noteType.isBlank()) {
+            notes = noteRepository.findByNoteTypeOrderByUpdatedAtDesc(noteType);
+        } else {
+            notes = noteRepository.findAllByOrderByUpdatedAtDesc();
         }
-        if (noteType != null && !noteType.isBlank()) {
-            return noteRepository.findByNoteTypeOrderByUpdatedAtDesc(noteType);
+
+        if (light) {
+            for (Note n : notes) {
+                String c = n.getContent();
+                if (c != null && c.length() > 200) {
+                    n.setContent(c.substring(0, 200));
+                }
+                n.setHtmlContent(null);
+            }
         }
-        return noteRepository.findAllByOrderByUpdatedAtDesc();
+        return notes;
     }
 
     /** GET /api/notes/folders */

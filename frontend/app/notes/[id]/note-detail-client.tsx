@@ -27,7 +27,7 @@ export default function NoteDetailClient({ note }: { note: NoteData }) {
   // 全量笔记用于解析双链 + 找同目录邻居
   useEffect(() => {
     const api = process.env.NEXT_PUBLIC_API_URL || "/api";
-    fetch(`${api}/notes`, { cache: "no-store" })
+    fetch(`${api}/notes?light=true`, { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : []))
       .then((data: NoteData[]) => setAll(Array.isArray(data) ? data : []))
       .catch(() => {});

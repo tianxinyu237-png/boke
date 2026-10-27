@@ -27,7 +27,8 @@ async function getNotes(): Promise<NoteData[]> {
       (process.env.NODE_ENV === "production"
         ? "http://backend:8080/api"
         : "http://localhost:8080/api");
-    const res = await fetch(`${api}/notes`, { next: { revalidate: 60 } });
+    // light=true:只取元数据 + 200 字预览,正文在详情页单独加载
+    const res = await fetch(`${api}/notes?light=true`, { next: { revalidate: 60 } });
     if (!res.ok) return [];
     return res.json();
   } catch {

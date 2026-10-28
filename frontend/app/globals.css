@@ -352,7 +352,9 @@ pre.shiki[data-language]::before {
 }
 
 body.has-custom-bg .glass-card {
-  background: rgb(var(--color-bg));
+  /* 半透明：叠在 0.62 的容器上，综合约 0.81 —— 卡片仍有独立块感，
+     但不再是一块死黑，壁纸的明暗过渡能隐约透上来 */
+  background: rgb(var(--color-bg-soft) / 0.32);
   border-color: rgb(var(--color-border) / 0.15);
 }
 body.has-custom-bg .backdrop-blur-md,
@@ -361,16 +363,22 @@ body.has-custom-bg .backdrop-blur-2xl {
   --tw-backdrop-blur: blur(4px);
 }
 
-/* ══ 内容容器实色底（方案A 2026-08-15）══
-   背景插画清晰可见（遮罩已淡化），正文靠实色深色容器保证可读。
-   只给主体容器实色底，不再强制文字颜色/阴影 —— 文字层级由
-   text-primary/secondary/muted 变量控制。 */
+/* ══ 内容容器半透明底（2026-10-28 改，替换 08-15 的实色方案A）══
+   旧做法：background-color: rgb(var(--color-bg)) —— 不透明深色，
+   整块内容区像一大片黑，把背景壁纸完全挡住。
+   现在：半透明 + 毛玻璃。壁纸能透出来（被 blur 虚化），
+   而 blur 同时压掉了背景细节的对比度，正文依然清晰可读。
+   · 有壁纸时 = 隔着一层磨砂玻璃看壁纸
+   · 没壁纸时 = 叠在同色底上，视觉与原来一致，无副作用 */
 .page-transition-wrap > div[class*="max-w-"] {
-  background-color: rgb(var(--color-bg));
+  background-color: rgb(var(--color-bg) / 0.40);
+  backdrop-filter: blur(24px) saturate(1.2);
+  -webkit-backdrop-filter: blur(24px) saturate(1.2);
   border-radius: 16px;
   box-shadow: 0 12px 40px rgb(0 0 0 / 0.28);
 }
 .light .page-transition-wrap > div[class*="max-w-"] {
+  background-color: rgb(var(--color-bg) / 0.46);
   box-shadow: 0 12px 40px rgb(0 0 0 / 0.08);
 }
 /* 导航横向滚动时不显示滚动条 (移动端) */

@@ -6,8 +6,10 @@ import { loadBgConfig, saveBgConfig, loadBgConfigHybrid, type BackgroundConfig }
 
 // 全局遮罩渐变 —— 与背景图合并进 body 的同一个 background 栈 (单图层)
 // 方案A：淡化遮罩，让背景插画清晰可见（原 0.84 压得太暗，背景几乎看不见）
+// 2026-10-28：随内容容器改半透明，遮罩同步调淡（0.52/0.44/0.56 → 0.40/0.34/0.44）。
+// 否则壁纸被压两层（遮罩 + 容器）后透出率只剩约 17%，看起来还是一块黑。
 const VEIL_GRADIENT =
-  "linear-gradient(180deg, rgba(10,10,22,0.52) 0%, rgba(10,10,22,0.44) 50%, rgba(10,10,22,0.56) 100%)";
+  "linear-gradient(180deg, rgba(10,10,22,0.40) 0%, rgba(10,10,22,0.34) 50%, rgba(10,10,22,0.44) 100%)";
 
 export default function BackgroundLayer({ initialConfig }: { initialConfig?: BackgroundConfig }) {
   const pathname = usePathname();

@@ -3,7 +3,8 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import type { Post } from "@/components/post-card";
 import { renderMarkdown } from "@/lib/highlight";
-import { SITE, coverImage } from "@/lib/config";
+import { SITE } from "@/lib/config";
+import { resolveCover } from "@/lib/cover";
 import { ArticleView } from "./article-view";
 
 export const dynamic = "force-dynamic";
@@ -16,7 +17,7 @@ export async function generateMetadata({
   const post = await getPost(params.slug);
   if (!post) return { title: "Not Found" };
 
-  const imgUrl = post.coverImage || coverImage(post.slug);
+  const imgUrl = resolveCover(post.coverImage);
   const url = `${SITE.url}/posts/${params.slug}`;
 
   return {
@@ -30,13 +31,13 @@ export async function generateMetadata({
       type: "article",
       publishedTime: post.date,
       tags: post.tags,
-      images: [{ url: imgUrl, width: 1200, height: 600 }],
+      ...(imgUrl ? { images: [{ url: imgUrl, width: 1200, height: 600 }] } : {}),
     },
     twitter: {
       card: "summary_large_image",
       title: post.title,
       description: post.excerpt,
-      images: [imgUrl],
+      ...(imgUrl ? { images: [imgUrl] } : {}),
     },
   };
 }
@@ -73,7 +74,7 @@ export default async function PostPage({
     author: { "@type": "Person", name: SITE.name, url: SITE.url },
     publisher: { "@type": "Person", name: SITE.name },
     mainEntityOfPage: `${SITE.url}/posts/${post.slug}`,
-    image: post.coverImage || coverImage(post.slug),
+    image: resolveCover(post.coverImage) || undefined,
     keywords: Array.isArray(post.tags) ? post.tags.join(",") : "",
   };
 

@@ -72,7 +72,7 @@ export default function HeroSection() {
   return (
     <section
       className={`relative flex items-center justify-center overflow-hidden transition-[min-height] duration-700 ${
-        isEmpty ? "min-h-[45vh]" : "min-h-[75vh]"
+        isEmpty ? "min-h-[45vh]" : "min-h-[82vh]"
       }`}
     >
       {/* Ambient background glow */}

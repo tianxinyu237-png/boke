@@ -1,7 +1,21 @@
 "use client";
 
+const MONTHS = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
+
+/* 直接从 ISO 串取年月日，避免时区差异导致 hydration 不一致 */
+function isoParts(dateStr: string) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(dateStr || "");
+  if (m) return { y: m[1], m: m[2], d: m[3] };
+  const dt = new Date(dateStr);
+  return {
+    y: String(dt.getFullYear()),
+    m: String(dt.getMonth() + 1).padStart(2, "0"),
+    d: String(dt.getDate()).padStart(2, "0"),
+  };
+}
+
 import { useState } from "react";
-import { coverImage } from "@/lib/config";
+import { resolveCover } from "@/lib/cover";
 
 interface Post {
   id: string;
@@ -80,35 +94,45 @@ export default function ArchiveContent({ posts }: { posts: Post[] }) {
             </h2>
 
             <div className="flex flex-col gap-3">
-              {byYear[year].map((post) => (
+              {byYear[year].map((post) => {
+                const cover = resolveCover(post.coverImage);
+                const dp = isoParts(post.date);
+                return (
                 <div
                   key={post.slug}
                   onClick={() => (window.location.href = `/posts/${post.slug}`)}
                   className="glass-card group flex items-stretch overflow-hidden cursor-pointer hover:border-accent/40"
                 >
-                  {/* Cover thumbnail — fixed width, no mask */}
-                  <div className="w-24 sm:w-32 shrink-0 overflow-hidden bg-bg-mute">
-                    <img
-                      src={post.coverImage || coverImage(post.slug)}
-                      alt=""
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      loading="lazy"
-                    />
-                  </div>
+                  {/* 封面：有真图才占位，否则整块收掉，把空间留给日期锚点 */}
+                  {cover ? (
+                    <div className="w-24 sm:w-32 shrink-0 overflow-hidden bg-bg-mute">
+                      <img
+                        src={cover}
+                        alt=""
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        loading="lazy"
+                      />
+                    </div>
+                  ) : null}
 
                   {/* Content */}
                   <div className="flex-1 p-3 sm:p-4 flex items-center gap-3 sm:gap-4 min-w-0">
+                    {/* 无封面时日期升级为版面锚点（大字日 + 月份），卡片不再空洞 */}
                     <time
                       dateTime={post.date}
-                      className="text-xs text-text-muted shrink-0 text-right leading-tight"
+                      className="shrink-0 text-right leading-none"
                     >
-                      <span className="block text-[11px]">
-                        {new Date(post.date).toLocaleDateString("zh-CN", {
-                          month: "short",
-                        })}
+                      <span className="block text-[10px] uppercase tracking-[0.14em] text-text-muted">
+                        {MONTHS[Number(dp.m) - 1] || dp.m}
                       </span>
-                      <span className="block text-sm font-mono text-text-secondary">
-                        {new Date(post.date).getDate()}
+                      <span
+                        className={
+                          cover
+                            ? "mt-1 block font-mono text-sm text-text-secondary"
+                            : "mt-1 block font-mono text-[22px] font-semibold text-accent/85"
+                        }
+                      >
+                        {dp.d}
                       </span>
                     </time>
                     <span className="text-sm sm:text-base font-medium text-text-primary group-hover:text-accent transition-colors truncate">
@@ -116,7 +140,8 @@ export default function ArchiveContent({ posts }: { posts: Post[] }) {
                     </span>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           </section>
         ))}

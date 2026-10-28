@@ -1,6 +1,7 @@
 import { getPostsFlat } from "@/lib/posts";
 import type { Post } from "@/components/post-card";
-import { SITE, coverImage } from "@/lib/config";
+import { SITE } from "@/lib/config";
+import { resolveCover } from "@/lib/cover";
 
 const API = "http://backend:8080/api";
 export const revalidate = 3600;
@@ -11,7 +12,7 @@ function escapeXml(s: string) {
 
 async function rssItem(post: Post) {
   const url = `${SITE.url}/posts/${post.slug}`;
-  const imgUrl = post.coverImage || coverImage(post.slug);
+  const imgUrl = resolveCover(post.coverImage);
 
   // Fetch full content for RSS
   let fullContent = post.excerpt;
@@ -34,7 +35,7 @@ async function rssItem(post: Post) {
       <content:encoded><![CDATA[${fullContent}]]></content:encoded>
       <pubDate>${new Date(post.date).toUTCString()}</pubDate>
       <dc:creator>${escapeXml(SITE.name)}</dc:creator>
-      <enclosure url="${escapeXml(imgUrl)}" type="image/jpeg"/>
+      ${imgUrl ? `<enclosure url="${escapeXml(imgUrl)}" type="image/jpeg"/>` : ""}
 ${categories}
     </item>`;
 }

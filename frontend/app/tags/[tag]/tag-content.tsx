@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { coverImage } from "@/lib/config";
+import { resolveCover } from "@/lib/cover";
 
 interface Post {
   id: string;
@@ -39,15 +39,17 @@ export default function TagContent({
             onClick={() => (window.location.href = `/posts/${post.slug}`)}
             className="glass-card group flex items-stretch overflow-hidden cursor-pointer hover:border-accent/40"
           >
-            {/* Cover thumbnail */}
-            <div className="w-24 sm:w-32 shrink-0 overflow-hidden bg-bg-mute">
-              <img
-                src={post.coverImage || coverImage(post.slug)}
-                alt=""
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                loading="lazy"
-              />
-            </div>
+            {/* 封面：仅真图才显示（picsum 占位图一律不用） */}
+            {resolveCover(post.coverImage) ? (
+              <div className="w-24 sm:w-32 shrink-0 overflow-hidden bg-bg-mute">
+                <img
+                  src={resolveCover(post.coverImage) as string}
+                  alt=""
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  loading="lazy"
+                />
+              </div>
+            ) : null}
 
             <div className="flex-1 p-3 sm:p-4 flex items-center gap-3 sm:gap-4 min-w-0">
               <time

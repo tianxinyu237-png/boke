@@ -144,6 +144,19 @@ export default function NotesContent({ notes }: { notes: NoteData[] }) {
     );
   }, [visible]);
 
+  /* 直接从 ISO 串取月.日（和文章归档页一致的 MM.DD 写法），
+     避免 new Date() 在服务端/客户端因时区不同而渲染出不同日期 */
+  function noteParts(iso: string) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso || "");
+    if (m) return { y: m[1], m: m[2], d: m[3] };
+    const dt = new Date(iso);
+    return {
+      y: String(dt.getFullYear()),
+      m: String(dt.getMonth() + 1).padStart(2, "0"),
+      d: String(dt.getDate()).padStart(2, "0"),
+    };
+  }
+
   function preview(content: string | null): string {
     if (!content) return "";
     return content
@@ -206,11 +219,15 @@ export default function NotesContent({ notes }: { notes: NoteData[] }) {
 
   return (
     <div className="mx-auto w-full max-w-[1440px] px-4 pb-24 pt-12 sm:px-6 lg:px-8">
+      {/* 页头：与文章归档页同一套语言 —— 英文小字大写 + 霞鹜文楷大标题 */}
       <header className="mb-8">
-        <h1 className="serif-title mb-1 text-[26px] font-semibold tracking-tight text-text-primary">
+        <p className="text-[10px] font-medium uppercase tracking-[0.24em] text-text-muted">
+          Knowledge Base / Notes Index
+        </p>
+        <h1 className="mt-3 font-wenkai text-[clamp(28px,4vw,40px)] leading-[1.1] tracking-[-0.02em] text-text-primary">
           知识库
         </h1>
-        <p className="text-sm text-text-muted">
+        <p className="mt-3 text-[13px] text-text-muted">
           {notes.length} 篇 · {totalFolders} 个目录 · 来自本地 Obsidian vault
         </p>
       </header>
@@ -281,46 +298,53 @@ export default function NotesContent({ notes }: { notes: NoteData[] }) {
             <p className="py-12 text-center text-sm text-text-muted">没有匹配的内容</p>
           )}
 
-          <div className="space-y-7">
+          <div className="mt-2">
             {grouped.map(([folder, items]) => (
-              <section key={folder || "__root"}>
+              <section key={folder || "__root"} className="mt-9 first:mt-0">
+                {/* 组头：仿文章归档页的年份行（名称 + 篇数 + 拉通分隔线） */}
                 {grouped.length > 1 && (
-                  <h2 className="mb-2.5 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-accent">
-                    {folder || "根目录"}
-                    <span className="h-px flex-1 bg-border" />
-                    <span className="font-normal normal-case tracking-normal text-text-muted">
-                      {items.length}
+                  <div className="flex items-baseline gap-3 border-b border-border pb-2.5">
+                    <h2 className="font-mono text-[16px] font-semibold tracking-tight text-text-primary">
+                      {folder || "根目录"}
+                    </h2>
+                    <span className="text-[11px] text-text-muted">
+                      {String(items.length).padStart(2, "0")} 篇
                     </span>
-                  </h2>
+                    <span className="h-px flex-1 bg-border/60" />
+                  </div>
                 )}
-                <div className="flex flex-col gap-1.5">
-                  {items.map((note) => (
-                    <Link
-                      key={note.id}
-                      href={`/notes/${note.id}`}
-                      className="group block rounded-xl border border-border bg-bg-soft px-4 py-3 transition-colors hover:border-accent/40"
-                    >
-                      <div className="flex items-baseline gap-2">
-                        <h3 className="serif-title flex-1 truncate text-[15px] font-medium text-text-primary transition-colors group-hover:text-accent">
-                          {note.noteType === "mindmap" && "🧠 "}
-                          {note.title || "无标题"}
-                        </h3>
-                        <span className="shrink-0 text-[10px] text-text-muted">
-                          {note.updatedAt &&
-                            new Date(note.updatedAt).toLocaleDateString("zh-CN", {
-                              timeZone: "Asia/Shanghai",
-                              year: "numeric",
-                              month: "numeric",
-                              day: "numeric",
-                            })}
-                        </span>
-                      </div>
-                      <p className="mt-1 truncate text-[11px] text-text-muted">
-                        {preview(note.content)}
-                      </p>
-                    </Link>
-                  ))}
-                </div>
+
+                <ol>
+                  {items.map((note) => {
+                    const d = noteParts(note.updatedAt);
+                    return (
+                      <li key={note.id}>
+                        {/* 索引行（无卡片、无圆角、无底色）：日期列 + 标题 + 摘要，
+                            和文章归档页的条目同一套排布 */}
+                        <Link
+                          href={`/notes/${note.id}`}
+                          className="group grid grid-cols-[38px_1fr] items-baseline gap-x-4 border-b border-border/40 py-3.5 transition-colors hover:border-accent/30 sm:grid-cols-[44px_1fr]"
+                        >
+                          <time
+                            dateTime={note.updatedAt}
+                            className="font-mono text-[11.5px] text-text-muted"
+                          >
+                            {d.m}.{d.d}
+                          </time>
+                          <div className="min-w-0">
+                            <h3 className="font-wenkai text-[15.5px] leading-snug text-text-primary transition-colors group-hover:text-accent">
+                              {note.noteType === "mindmap" && "🧠 "}
+                              {note.title || "无标题"}
+                            </h3>
+                            <p className="mt-1 truncate text-[11.5px] leading-relaxed text-text-muted">
+                              {preview(note.content)}
+                            </p>
+                          </div>
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ol>
               </section>
             ))}
           </div>

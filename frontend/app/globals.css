@@ -455,6 +455,50 @@ body.has-custom-bg .backdrop-blur-2xl {
   overflow-x: auto;
   max-width: 100%;
 }
+/* ── 长内容不撑破容器（移动端必看）── */
+.kb-note-body {
+  overflow-wrap: break-word;
+  min-width: 0;
+}
+/* 行内代码：长串允许断行，否则会把整段撑出屏幕 */
+.kb-note-body :not(pre) > code {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  max-width: 100%;
+}
+/* 代码块：自身横向滚动，不撑页面 */
+.kb-note-body pre {
+  overflow-x: auto;
+  max-width: 100%;
+  -webkit-overflow-scrolling: touch;
+}
+.kb-note-body pre > code {
+  white-space: pre;
+  overflow-wrap: normal;
+  word-break: normal;
+}
 .kb-note-body h1, .kb-note-body h2, .kb-note-body h3 { scroll-margin-top: 5rem; }
+
+/* ── 侧栏细滚动条（知识库目录树 / 本页目录 TOC）── */
+.thin-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, currentColor 20%, transparent) transparent;
+  overscroll-behavior: contain;
+}
+.thin-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+.thin-scroll::-webkit-scrollbar-track { background: transparent; }
+.thin-scroll::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, currentColor 15%, transparent);
+  border-radius: 999px;
+  transition: background 0.2s;
+}
+.thin-scroll:hover::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, currentColor 32%, transparent);
+}
+
+/* 小屏隐藏横向滚动条（列表页目录） */
+.no-scrollbar { scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
 .kb-note-body a { color: rgb(var(--color-accent)); text-decoration: none; }
 .kb-note-body a:hover { text-decoration: underline; }

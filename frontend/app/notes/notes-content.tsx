@@ -1,7 +1,14 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import {
+  ArrowsClockwise,
+  ClockCounterClockwise,
+  FolderSimple,
+  Notebook,
+} from "@phosphor-icons/react";
 
 interface NoteData {
   id: number;
@@ -22,10 +29,14 @@ interface FolderNode {
 }
 
 export default function NotesContent({ notes }: { notes: NoteData[] }) {
+  const router = useRouter();
   const [search, setSearch] = useState("");
   const [activeFolder, setActiveFolder] = useState<string | null>(null);
+  // 相对时间依赖 Date.now()，服务端与客户端必然不一致 → 挂载后才渲染
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
-  // 目录树:把 folder 路径("嵌入式/代码框架")拆成层级节点,并累计子目录笔记数
+  /* 目录树：把 folder 路径拆层级 + 累计子目录篇数 */
   const folderNodes = useMemo<FolderNode[]>(() => {
     const exact = new Map<string, number>();
     for (const n of notes) {
@@ -88,7 +99,6 @@ export default function NotesContent({ notes }: { notes: NoteData[] }) {
     return result;
   }, [notes, activeFolder, search]);
 
-  // 按 folder 分组展示
   const grouped = useMemo(() => {
     const map = new Map<string, NoteData[]>();
     for (const n of visible) {
@@ -114,34 +124,71 @@ export default function NotesContent({ notes }: { notes: NoteData[] }) {
 
   const totalFolders = folderNodes.filter((n) => n.path !== "").length;
 
+  /* 右栏数据：最近更新 + 本周新增 + 随机漫游 */
+  const recent = useMemo(
+    () =>
+      [...notes]
+        .sort(
+          (a, b) =>
+            new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+        )
+        .slice(0, 6),
+    [notes]
+  );
+
+  function randomNote() {
+    if (!notes.length) return;
+    router.push(`/notes/${notes[Math.floor(Math.random() * notes.length)].id}`);
+  }
+
+  const stats = [
+    { icon: Notebook, label: "篇笔记", value: notes.length },
+    { icon: FolderSimple, label: "个目录", value: totalFolders },
+  ];
+
+  /* 相对时间：避免依赖"本周新增"（同步会刷新 updatedAt，早期统计不可靠） */
+  function relTime(iso?: string): string {
+    if (!iso) return "—";
+    const t = new Date(iso).getTime();
+    if (!Number.isFinite(t)) return "—";
+    const m = Math.floor((Date.now() - t) / 60000);
+    if (m < 1) return "刚刚";
+    if (m < 60) return `${m} 分钟前`;
+    const h = Math.floor(m / 60);
+    if (h < 24) return `${h} 小时前`;
+    const d = Math.floor(h / 24);
+    if (d < 30) return `${d} 天前`;
+    return new Date(iso).toLocaleDateString("zh-CN");
+  }
+
   return (
-    <div className="max-w-5xl mx-auto px-4 pt-12 pb-24">
+    <div className="mx-auto w-full max-w-[1360px] px-4 pb-24 pt-12 sm:px-6 lg:px-8">
       <header className="mb-8">
-        <h1 className="text-2xl font-bold tracking-tight text-text-primary mb-1">
+        <h1 className="mb-1 text-2xl font-bold tracking-tight text-text-primary">
           知识库
         </h1>
-        <p className="text-text-muted text-sm">
+        <p className="text-sm text-text-muted">
           {notes.length} 篇 · {totalFolders} 个目录 · 来自本地 Obsidian vault
         </p>
       </header>
 
-      <div className="flex flex-col md:flex-row gap-6">
-        {/* 左侧目录树 */}
-        <aside className="md:w-52 shrink-0">
-          <div className="md:sticky md:top-20">
-            <div className="text-[11px] font-semibold text-text-muted uppercase tracking-wider mb-2 px-2">
+      <div className="flex flex-col gap-6 lg:flex-row lg:gap-8">
+        {/* ───── 左：目录树 ───── */}
+        <aside className="lg:w-[228px] lg:shrink-0">
+          <div className="lg:sticky lg:top-20">
+            <div className="mb-2 px-2 text-[11px] font-semibold uppercase tracking-wider text-text-muted">
               目录
             </div>
-            <nav className="flex flex-row md:flex-col gap-1 overflow-x-auto no-scrollbar md:overflow-visible pb-2 md:pb-0">
+            <nav className="no-scrollbar flex flex-row gap-1 overflow-x-auto pb-2 lg:flex-col lg:overflow-visible lg:pb-0">
               <button
                 onClick={() => setActiveFolder(null)}
-                className={`text-left whitespace-nowrap px-2.5 py-1.5 rounded-lg text-[13px] transition-colors ${
+                className={`whitespace-nowrap rounded-lg px-2.5 py-1.5 text-left text-[13px] transition-colors ${
                   activeFolder === null
-                    ? "bg-accent/15 text-accent font-medium"
+                    ? "bg-accent/15 font-medium text-accent"
                     : "text-text-secondary hover:bg-bg-soft hover:text-text-primary"
                 }`}
               >
-                全部 <span className="text-text-muted text-[11px]">{notes.length}</span>
+                全部 <span className="text-[11px] text-text-muted">{notes.length}</span>
               </button>
               {folderNodes.map((node) => (
                 <button
@@ -150,26 +197,30 @@ export default function NotesContent({ notes }: { notes: NoteData[] }) {
                     setActiveFolder(activeFolder === node.path ? null : node.path)
                   }
                   style={{ paddingLeft: `${10 + node.depth * 12}px` }}
-                  className={`text-left whitespace-nowrap pr-2.5 py-1.5 rounded-lg text-[13px] transition-colors flex items-center gap-1.5 ${
+                  className={`flex items-center gap-1.5 whitespace-nowrap rounded-lg py-1.5 pr-2.5 text-left text-[13px] transition-colors ${
                     activeFolder === node.path
-                      ? "bg-accent/15 text-accent font-medium"
+                      ? "bg-accent/15 font-medium text-accent"
                       : "text-text-secondary hover:bg-bg-soft hover:text-text-primary"
                   }`}
                 >
                   <span className="truncate">{node.label}</span>
-                  <span className="text-text-muted text-[11px] shrink-0">{node.count}</span>
+                  <span className="shrink-0 text-[11px] text-text-muted">{node.count}</span>
                 </button>
               ))}
             </nav>
           </div>
         </aside>
 
-        {/* 右侧内容 */}
-        <div className="flex-1 min-w-0">
+        {/* ───── 中：搜索 + 列表 ───── */}
+        <div className="min-w-0 flex-1">
           <div className="relative mb-5">
             <svg
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted"
-              fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" viewBox="0 0 24 24"
+              className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              viewBox="0 0 24 24"
             >
               <circle cx="11" cy="11" r="8" />
               <line x1="21" y1="21" x2="16.65" y2="16.65" />
@@ -179,24 +230,22 @@ export default function NotesContent({ notes }: { notes: NoteData[] }) {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="搜索标题或正文..."
-              className="w-full bg-bg-soft border border-border rounded-xl pl-10 pr-4 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:border-accent focus:ring-1 focus:ring-accent/30 outline-none transition-colors"
+              className="w-full rounded-xl border border-border bg-bg-soft py-2.5 pl-10 pr-4 text-sm text-text-primary outline-none transition-colors placeholder:text-text-muted focus:border-accent focus:ring-1 focus:ring-accent/30"
             />
           </div>
 
           {visible.length === 0 && (
-            <p className="text-text-muted text-sm py-12 text-center">
-              没有匹配的内容
-            </p>
+            <p className="py-12 text-center text-sm text-text-muted">没有匹配的内容</p>
           )}
 
           <div className="space-y-7">
             {grouped.map(([folder, items]) => (
               <section key={folder || "__root"}>
                 {grouped.length > 1 && (
-                  <h2 className="text-[11px] font-semibold text-accent uppercase tracking-wider mb-2.5 flex items-center gap-2">
+                  <h2 className="mb-2.5 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-accent">
                     {folder || "根目录"}
                     <span className="h-px flex-1 bg-border" />
-                    <span className="text-text-muted font-normal normal-case tracking-normal">
+                    <span className="font-normal normal-case tracking-normal text-text-muted">
                       {items.length}
                     </span>
                   </h2>
@@ -206,21 +255,24 @@ export default function NotesContent({ notes }: { notes: NoteData[] }) {
                     <Link
                       key={note.id}
                       href={`/notes/${note.id}`}
-                      className="group block bg-bg-soft border border-border rounded-xl px-4 py-3 hover:border-accent/40 transition-colors"
+                      className="group block rounded-xl border border-border bg-bg-soft px-4 py-3 transition-colors hover:border-accent/40"
                     >
                       <div className="flex items-baseline gap-2">
-                        <h3 className="text-sm font-medium text-text-primary group-hover:text-accent transition-colors truncate flex-1">
+                        <h3 className="flex-1 truncate text-sm font-medium text-text-primary transition-colors group-hover:text-accent">
                           {note.noteType === "mindmap" && "🧠 "}
                           {note.title || "无标题"}
                         </h3>
-                        <span className="text-[10px] text-text-muted shrink-0">
+                        <span className="shrink-0 text-[10px] text-text-muted">
                           {note.updatedAt &&
                             new Date(note.updatedAt).toLocaleDateString("zh-CN", {
-                              year: "numeric", month: "numeric", day: "numeric",
+                              timeZone: "Asia/Shanghai",
+                              year: "numeric",
+                              month: "numeric",
+                              day: "numeric",
                             })}
                         </span>
                       </div>
-                      <p className="text-[11px] text-text-muted mt-1 truncate">
+                      <p className="mt-1 truncate text-[11px] text-text-muted">
                         {preview(note.content)}
                       </p>
                     </Link>
@@ -230,6 +282,107 @@ export default function NotesContent({ notes }: { notes: NoteData[] }) {
             ))}
           </div>
         </div>
+
+        {/* ───── 右：统计 / 最近更新 / 随机 ───── */}
+        <aside className="lg:w-[288px] lg:shrink-0">
+          <div className="flex flex-col gap-4 lg:sticky lg:top-20">
+            {/* 统计卡 */}
+            <div className="rounded-2xl border border-border bg-bg-soft p-4">
+              <div className="grid grid-cols-2 gap-2">
+                {stats.map((s) => (
+                  <div key={s.label} className="flex flex-col items-center gap-1">
+                    <s.icon className="h-4 w-4 text-accent" />
+                    <span className="font-mono text-lg font-semibold leading-none text-text-primary">
+                      {s.value}
+                    </span>
+                    <span className="text-[10px] text-text-muted">{s.label}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-3 flex items-center justify-between border-t border-border pt-2.5 text-[11px]">
+                <span className="text-text-muted">最近更新</span>
+                <span className="text-text-secondary">{mounted ? relTime(recent[0]?.updatedAt) : "—"}</span>
+              </div>
+            </div>
+
+            {/* 随机漫游 */}
+            <button
+              onClick={randomNote}
+              className="group flex items-center justify-center gap-2 rounded-xl border border-accent/30 bg-accent/10 px-4 py-2.5 text-[13px] font-medium text-accent transition-colors hover:bg-accent/20"
+            >
+              <ArrowsClockwise className="h-4 w-4 transition-transform group-hover:rotate-180" />
+              随机漫游一篇
+            </button>
+
+            {/* 最近更新 */}
+            <div className="rounded-2xl border border-border bg-bg-soft p-4">
+              <div className="mb-2.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-text-muted">
+                <ClockCounterClockwise className="h-3.5 w-3.5" />
+                最近更新
+              </div>
+              <div className="flex flex-col gap-0.5">
+                {recent.map((n) => (
+                  <Link
+                    key={n.id}
+                    href={`/notes/${n.id}`}
+                    className="group rounded-md px-1.5 py-1.5 text-[12.5px] text-text-secondary transition-colors hover:bg-bg-base hover:text-accent"
+                  >
+                    <div className="truncate">{n.title}</div>
+                    <div className="text-[10px] text-text-muted">
+                      {n.updatedAt &&
+                        new Date(n.updatedAt).toLocaleDateString("zh-CN", {
+                          timeZone: "Asia/Shanghai",
+                        })}
+                      {n.folder ? ` · ${n.folder.split("/").pop()}` : ""}
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            {/* 目录分布 */}
+            <div className="rounded-2xl border border-border bg-bg-soft p-4">
+              <div className="mb-2.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-text-muted">
+                <FolderSimple className="h-3.5 w-3.5" />
+                目录分布
+              </div>
+              <div className="flex flex-col gap-1.5">
+                {folderNodes
+                  .filter((n) => n.path !== "" && n.depth === 0)
+                  .sort((a, b) => b.count - a.count)
+                  .slice(0, 6)
+                  .map((n) => {
+                    const max = Math.max(
+                      ...folderNodes.filter((x) => x.depth === 0).map((x) => x.count),
+                      1
+                    );
+                    return (
+                      <button
+                        key={n.path}
+                        onClick={() => setActiveFolder(n.path)}
+                        className="group text-left"
+                      >
+                        <div className="mb-0.5 flex items-baseline justify-between gap-2">
+                          <span className="truncate text-[12px] text-text-secondary group-hover:text-accent">
+                            {n.label}
+                          </span>
+                          <span className="shrink-0 font-mono text-[10px] text-text-muted">
+                            {n.count}
+                          </span>
+                        </div>
+                        <div className="h-1 overflow-hidden rounded-full bg-bg-base">
+                          <div
+                            className="h-full rounded-full bg-accent/60 transition-all"
+                            style={{ width: `${(n.count / max) * 100}%` }}
+                          />
+                        </div>
+                      </button>
+                    );
+                  })}
+              </div>
+            </div>
+          </div>
+        </aside>
       </div>
     </div>
   );

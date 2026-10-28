@@ -600,12 +600,12 @@ select[class~="bg-bg-soft"] {
 }
 
 /* ══════════════════════════════════════════════════════════════
-   标题衬线化 —— 给标题「印刷品 / 编辑感」，正文保持无衬线。
-   只用于标题，不要套到正文（中文衬线在小字号屏显会发虚）。
+   标题衬线化 —— 给标题「印刷品 / 编辑感」。
+   2026-10-28：统一为霞鹜文楷（与全站正文同一套），
+   不再混 Georgia / 宋体，避免标题与正文是两种气质。
    ══════════════════════════════════════════════════════════════ */
 .serif-title {
-  font-family: Georgia, "Times New Roman", "Songti SC", "Noto Serif SC",
-    "Source Han Serif SC", SimSun, serif;
+  font-family: "LXGW WenKai Lite", "Songti SC", Georgia, serif;
   font-feature-settings: "palt" 1;
   letter-spacing: 0.01em;
 }

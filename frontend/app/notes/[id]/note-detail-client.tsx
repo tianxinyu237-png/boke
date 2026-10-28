@@ -309,7 +309,7 @@ export default function NoteDetailClient({ note }: { note: NoteData }) {
                   </button>
                 )}
               </div>
-              <h1 className="text-2xl font-bold leading-tight text-text-primary sm:text-3xl">
+              <h1 className="serif-title text-[26px] font-semibold leading-tight text-text-primary sm:text-[32px]">
                 {note.title}
               </h1>
             </div>

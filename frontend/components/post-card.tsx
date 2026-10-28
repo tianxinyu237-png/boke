@@ -57,7 +57,7 @@ export default function PostCard({ post }: { post: Post }) {
             <span>·</span>
             <span>{post.readTime}</span>
           </div>
-          <h2 className="text-lg font-bold text-text-primary group-hover:text-accent transition-colors mb-1.5 line-clamp-1">
+          <h2 className="serif-title text-[19px] font-semibold text-text-primary group-hover:text-accent transition-colors mb-1.5 line-clamp-1">
             {post.title}
           </h2>
           <p className="text-xs text-text-secondary line-clamp-2 leading-relaxed mb-2">{post.excerpt}</p>

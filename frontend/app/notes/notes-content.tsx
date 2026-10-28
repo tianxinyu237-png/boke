@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -28,6 +28,24 @@ interface FolderNode {
   count: number;
 }
 
+/* 右栏三面翻转卡：学「奶油小屋」hc-card 的思路 —— 多个挂件叠进一个卡位 */
+const CARD_FACES = [
+  { key: "stats", label: "统计" },
+  { key: "recent", label: "最近" },
+  { key: "folders", label: "目录" },
+] as const;
+
+const FACE_ANGLE = 360 / CARD_FACES.length; // 120deg
+
+/** 每面的 3D 定位：绕着 Y 轴均分 + 沿法线外推半径 */
+function faceStyle(index: number, radius: number) {
+  return {
+    transform: `rotateY(${index * FACE_ANGLE}deg) translateZ(${radius}px)`,
+    backfaceVisibility: "hidden" as const,
+    WebkitBackfaceVisibility: "hidden" as const,
+  };
+}
+
 export default function NotesContent({ notes }: { notes: NoteData[] }) {
   const router = useRouter();
   const [search, setSearch] = useState("");
@@ -35,6 +53,21 @@ export default function NotesContent({ notes }: { notes: NoteData[] }) {
   // 相对时间依赖 Date.now()，服务端与客户端必然不一致 → 挂载后才渲染
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
+
+  // 翻转卡：当前面 + 舞台半径（响应式，宽度变化时重算）
+  const [face, setFace] = useState(0);
+  const stageRef = useRef<HTMLDivElement>(null);
+  const [radius, setRadius] = useState(83);
+  useEffect(() => {
+    const el = stageRef.current;
+    if (!el) return;
+    const update = () =>
+      setRadius(Math.max(60, el.offsetWidth / (2 * Math.tan(Math.PI / 3))));
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   /* 目录树：把 folder 路径拆层级 + 累计子目录篇数 */
   const folderNodes = useMemo<FolderNode[]>(() => {
@@ -146,6 +179,16 @@ export default function NotesContent({ notes }: { notes: NoteData[] }) {
     { icon: FolderSimple, label: "个目录", value: totalFolders },
   ];
 
+  /* 一级目录 TOP6 + 归一化基准 */
+  const topFolders = useMemo(() => {
+    const roots = folderNodes.filter((n) => n.path !== "" && n.depth === 0);
+    const max = Math.max(...roots.map((x) => x.count), 1);
+    return {
+      list: [...roots].sort((a, b) => b.count - a.count).slice(0, 6),
+      max,
+    };
+  }, [folderNodes]);
+
   /* 相对时间：避免依赖"本周新增"（同步会刷新 updatedAt，早期统计不可靠） */
   function relTime(iso?: string): string {
     if (!iso) return "—";
@@ -164,7 +207,7 @@ export default function NotesContent({ notes }: { notes: NoteData[] }) {
   return (
     <div className="mx-auto w-full max-w-[1360px] px-4 pb-24 pt-12 sm:px-6 lg:px-8">
       <header className="mb-8">
-        <h1 className="mb-1 text-2xl font-bold tracking-tight text-text-primary">
+        <h1 className="serif-title mb-1 text-[26px] font-semibold tracking-tight text-text-primary">
           知识库
         </h1>
         <p className="text-sm text-text-muted">
@@ -258,7 +301,7 @@ export default function NotesContent({ notes }: { notes: NoteData[] }) {
                       className="group block rounded-xl border border-border bg-bg-soft px-4 py-3 transition-colors hover:border-accent/40"
                     >
                       <div className="flex items-baseline gap-2">
-                        <h3 className="flex-1 truncate text-sm font-medium text-text-primary transition-colors group-hover:text-accent">
+                        <h3 className="serif-title flex-1 truncate text-[15px] font-medium text-text-primary transition-colors group-hover:text-accent">
                           {note.noteType === "mindmap" && "🧠 "}
                           {note.title || "无标题"}
                         </h3>
@@ -283,104 +326,144 @@ export default function NotesContent({ notes }: { notes: NoteData[] }) {
           </div>
         </div>
 
-        {/* ───── 右：统计 / 最近更新 / 随机 ───── */}
+        {/* ───── 右：三面翻转卡（统计 / 最近更新 / 目录分布）───── */}
         <aside className="lg:w-[288px] lg:shrink-0">
-          <div className="flex flex-col gap-4 lg:sticky lg:top-20">
-            {/* 统计卡 */}
-            <div className="rounded-2xl border border-border bg-bg-soft p-4">
-              <div className="grid grid-cols-2 gap-2">
-                {stats.map((s) => (
-                  <div key={s.label} className="flex flex-col items-center gap-1">
-                    <s.icon className="h-4 w-4 text-accent" />
-                    <span className="font-mono text-lg font-semibold leading-none text-text-primary">
-                      {s.value}
-                    </span>
-                    <span className="text-[10px] text-text-muted">{s.label}</span>
+          <div className="lg:sticky lg:top-20">
+            {/* 面切换标签 */}
+            <div className="mb-2 flex items-center gap-1">
+              {CARD_FACES.map((f, i) => (
+                <button
+                  key={f.key}
+                  onClick={() => setFace(i)}
+                  aria-pressed={face === i}
+                  className={`flex-1 rounded-md px-2 py-1 text-[10.5px] font-medium transition-colors ${
+                    face === i
+                      ? "bg-accent/15 text-accent"
+                      : "text-text-muted hover:bg-bg-soft hover:text-text-secondary"
+                  }`}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+
+            {/* 3D 翻转舞台 */}
+            <div ref={stageRef} className="flip-stage">
+              <div
+                className="flip-cube"
+                style={{
+                  transformStyle: "preserve-3d",
+                  transform: `rotateY(${-face * FACE_ANGLE}deg)`,
+                }}
+              >
+                {/* 面 0 · 统计 */}
+                <div
+                  className="flip-face rounded-2xl border border-border bg-bg-soft p-4"
+                  style={faceStyle(0, radius)}
+                >
+                  <div className="flex h-full flex-col">
+                    <div className="grid flex-1 grid-cols-2 place-content-center gap-3">
+                      {stats.map((s) => (
+                        <div key={s.label} className="flex flex-col items-center gap-1">
+                          <s.icon className="h-4 w-4 text-accent" />
+                          <span className="font-mono text-lg font-semibold leading-none text-text-primary">
+                            {s.value}
+                          </span>
+                          <span className="text-[10px] text-text-muted">{s.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="flex items-center justify-between border-t border-border pt-2.5 text-[11px]">
+                      <span className="text-text-muted">最近更新</span>
+                      <span className="text-text-secondary">
+                        {mounted ? relTime(recent[0]?.updatedAt) : "—"}
+                      </span>
+                    </div>
                   </div>
-                ))}
-              </div>
-              <div className="mt-3 flex items-center justify-between border-t border-border pt-2.5 text-[11px]">
-                <span className="text-text-muted">最近更新</span>
-                <span className="text-text-secondary">{mounted ? relTime(recent[0]?.updatedAt) : "—"}</span>
+                </div>
+
+                {/* 面 1 · 最近更新 */}
+                <div
+                  className="flip-face rounded-2xl border border-border bg-bg-soft p-4"
+                  style={faceStyle(1, radius)}
+                >
+                  <div className="flex h-full flex-col">
+                    <div className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-text-muted">
+                      <ClockCounterClockwise className="h-3.5 w-3.5" />
+                      最近更新
+                    </div>
+                    <div className="thin-scroll -mr-1 flex-1 overflow-y-auto pr-1">
+                      <div className="flex flex-col gap-0.5">
+                        {recent.map((n) => (
+                          <Link
+                            key={n.id}
+                            href={`/notes/${n.id}`}
+                            className="group rounded-md px-1.5 py-1.5 text-[12.5px] text-text-secondary transition-colors hover:bg-bg-base hover:text-accent"
+                          >
+                            <div className="truncate">{n.title}</div>
+                            <div className="text-[10px] text-text-muted">
+                              {n.updatedAt &&
+                                new Date(n.updatedAt).toLocaleDateString("zh-CN", {
+                                  timeZone: "Asia/Shanghai",
+                                })}
+                              {n.folder ? ` · ${n.folder.split("/").pop()}` : ""}
+                            </div>
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 面 2 · 目录分布 */}
+                <div
+                  className="flip-face rounded-2xl border border-border bg-bg-soft p-4"
+                  style={faceStyle(2, radius)}
+                >
+                  <div className="flex h-full flex-col">
+                    <div className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-text-muted">
+                      <FolderSimple className="h-3.5 w-3.5" />
+                      目录分布
+                    </div>
+                    <div className="thin-scroll -mr-1 flex-1 overflow-y-auto pr-1">
+                      <div className="flex flex-col gap-1.5">
+                        {topFolders.list.map((n) => (
+                          <button
+                            key={n.path}
+                            onClick={() => setActiveFolder(n.path)}
+                            className="group text-left"
+                          >
+                            <div className="mb-0.5 flex items-baseline justify-between gap-2">
+                              <span className="truncate text-[12px] text-text-secondary group-hover:text-accent">
+                                {n.label}
+                              </span>
+                              <span className="shrink-0 font-mono text-[10px] text-text-muted">
+                                {n.count}
+                              </span>
+                            </div>
+                            <div className="h-1 overflow-hidden rounded-full bg-bg-base">
+                              <div
+                                className="h-full rounded-full bg-accent/60 transition-all"
+                                style={{ width: `${(n.count / topFolders.max) * 100}%` }}
+                              />
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* 随机漫游 */}
+            {/* 随机漫游：常驻在卡外，不参与翻转 */}
             <button
               onClick={randomNote}
-              className="group flex items-center justify-center gap-2 rounded-xl border border-accent/30 bg-accent/10 px-4 py-2.5 text-[13px] font-medium text-accent transition-colors hover:bg-accent/20"
+              className="group mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-accent/30 bg-accent/10 px-4 py-2.5 text-[13px] font-medium text-accent transition-colors hover:bg-accent/20"
             >
               <ArrowsClockwise className="h-4 w-4 transition-transform group-hover:rotate-180" />
               随机漫游一篇
             </button>
-
-            {/* 最近更新 */}
-            <div className="rounded-2xl border border-border bg-bg-soft p-4">
-              <div className="mb-2.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-text-muted">
-                <ClockCounterClockwise className="h-3.5 w-3.5" />
-                最近更新
-              </div>
-              <div className="flex flex-col gap-0.5">
-                {recent.map((n) => (
-                  <Link
-                    key={n.id}
-                    href={`/notes/${n.id}`}
-                    className="group rounded-md px-1.5 py-1.5 text-[12.5px] text-text-secondary transition-colors hover:bg-bg-base hover:text-accent"
-                  >
-                    <div className="truncate">{n.title}</div>
-                    <div className="text-[10px] text-text-muted">
-                      {n.updatedAt &&
-                        new Date(n.updatedAt).toLocaleDateString("zh-CN", {
-                          timeZone: "Asia/Shanghai",
-                        })}
-                      {n.folder ? ` · ${n.folder.split("/").pop()}` : ""}
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </div>
-
-            {/* 目录分布 */}
-            <div className="rounded-2xl border border-border bg-bg-soft p-4">
-              <div className="mb-2.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-text-muted">
-                <FolderSimple className="h-3.5 w-3.5" />
-                目录分布
-              </div>
-              <div className="flex flex-col gap-1.5">
-                {folderNodes
-                  .filter((n) => n.path !== "" && n.depth === 0)
-                  .sort((a, b) => b.count - a.count)
-                  .slice(0, 6)
-                  .map((n) => {
-                    const max = Math.max(
-                      ...folderNodes.filter((x) => x.depth === 0).map((x) => x.count),
-                      1
-                    );
-                    return (
-                      <button
-                        key={n.path}
-                        onClick={() => setActiveFolder(n.path)}
-                        className="group text-left"
-                      >
-                        <div className="mb-0.5 flex items-baseline justify-between gap-2">
-                          <span className="truncate text-[12px] text-text-secondary group-hover:text-accent">
-                            {n.label}
-                          </span>
-                          <span className="shrink-0 font-mono text-[10px] text-text-muted">
-                            {n.count}
-                          </span>
-                        </div>
-                        <div className="h-1 overflow-hidden rounded-full bg-bg-base">
-                          <div
-                            className="h-full rounded-full bg-accent/60 transition-all"
-                            style={{ width: `${(n.count / max) * 100}%` }}
-                          />
-                        </div>
-                      </button>
-                    );
-                  })}
-              </div>
-            </div>
           </div>
         </aside>
       </div>

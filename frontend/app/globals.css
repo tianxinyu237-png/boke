@@ -552,3 +552,45 @@ select[class~="bg-bg-soft"] {
     transition: none;
   }
 }
+
+/* ══════════════════════════════════════════════════════════════
+   三面翻转卡（知识库右栏）
+   把「统计 / 最近更新 / 目录分布」三个挂件叠进同一个卡位，
+   靠 rotateY 切换 —— 挂件密度上去了，纵向占位只算一个。
+   ══════════════════════════════════════════════════════════════ */
+.flip-stage {
+  position: relative;
+  height: 268px;
+  perspective: 1200px;
+}
+
+.flip-cube {
+  position: relative;
+  height: 100%;
+  width: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.5s cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+
+.flip-face {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flip-cube {
+    transition: none;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   标题衬线化 —— 给标题「印刷品 / 编辑感」，正文保持无衬线。
+   只用于标题，不要套到正文（中文衬线在小字号屏显会发虚）。
+   ══════════════════════════════════════════════════════════════ */
+.serif-title {
+  font-family: Georgia, "Times New Roman", "Songti SC", "Noto Serif SC",
+    "Source Han Serif SC", SimSun, serif;
+  font-feature-settings: "palt" 1;
+  letter-spacing: 0.01em;
+}

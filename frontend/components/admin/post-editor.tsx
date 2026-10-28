@@ -202,7 +202,7 @@ export default function PostEditor({ initial, onSave, mode }: PostEditorProps) {
             {coverImage && (
               <div className="w-32 h-20 shrink-0 rounded-lg overflow-hidden border border-border bg-bg-mute">
                 <img
-                  src={coverImage.startsWith("/") ? `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"}${coverImage}` : coverImage}
+                  src={coverImage.startsWith("/uploads/") ? coverImage : coverImage.startsWith("/") ? `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"}${coverImage}` : coverImage}
                   alt="封面预览"
                   className="w-full h-full object-cover"
                 />

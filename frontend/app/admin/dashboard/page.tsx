@@ -222,7 +222,7 @@ export default function DashboardPage() {
               {post.coverImage ? (
                 <div className="w-10 h-10 rounded-lg overflow-hidden border border-border shrink-0 bg-bg-mute">
                   <img
-                    src={post.coverImage.startsWith("/") ? `${process.env.NEXT_PUBLIC_API_URL || ""}${post.coverImage}` : post.coverImage}
+                    src={post.coverImage.startsWith("/uploads/") ? post.coverImage : post.coverImage.startsWith("/") ? `${process.env.NEXT_PUBLIC_API_URL || ""}${post.coverImage}` : post.coverImage}
                     alt=""
                     className="w-full h-full object-cover"
                     onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}

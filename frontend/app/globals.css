@@ -29,6 +29,16 @@
   --hero-from: #c084fc;
   --hero-via: #a78bfa;
   --hero-to: #7c5cd6;
+  /* ── 表面材质阴影：顶部 1px 内高光 + 主题色柔影 + 极淡底影 ──
+     要点：阴影用主题色（紫），不用黑色 —— 卡片才像「浮在光里」而不是「贴了层灰」 */
+  --shadow-surface:
+    inset 0 1px 0 rgb(255 255 255 / 0.045),
+    0 10px 26px -18px rgb(var(--color-accent) / 0.55),
+    0 2px 8px -4px rgb(0 0 0 / 0.32);
+  --shadow-surface-hover:
+    inset 0 1px 0 rgb(255 255 255 / 0.075),
+    0 16px 34px -16px rgb(var(--color-accent) / 0.5),
+    0 4px 14px -6px rgb(0 0 0 / 0.38);
 }
 
 /* Light mode override */
@@ -52,6 +62,13 @@
   --hero-from: #0ea5e9;
   --hero-via: #22d3ee;
   --hero-to: #38bdf8;
+  /* 亮色：主题色（天蓝）柔影 + 极淡灰影，替代纯黑阴影的「脏」感 */
+  --shadow-surface:
+    0 10px 26px -18px rgb(var(--color-accent) / 0.5),
+    0 1px 3px -1px rgb(0 0 0 / 0.07);
+  --shadow-surface-hover:
+    0 16px 34px -16px rgb(var(--color-accent) / 0.55),
+    0 3px 10px -3px rgb(0 0 0 / 0.1);
 }
 
 /* ── Base layer ── */
@@ -502,3 +519,36 @@ body.has-custom-bg .backdrop-blur-2xl {
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .kb-note-body a { color: rgb(var(--color-accent)); text-decoration: none; }
 .kb-note-body a:hover { text-decoration: underline; }
+
+/* ══════════════════════════════════════════════════════════════
+   统一表面材质（2026-10-28）
+   参考「奶油小屋」的做法：阴影用主题色，不用黑色。
+   1. [class~="bg-bg-soft"] 精确匹配完整 class token，
+      不会误伤 hover:bg-bg-soft（否则透明元素上会出现空洞阴影）
+   2. 排除 rounded-full（小圆点/胶囊不需要投影）
+   3. 排除已带 shadow-* 的元素（尊重显式声明的光晕等特例）
+   ══════════════════════════════════════════════════════════════ */
+[class~="bg-bg-soft"][class*="rounded-"]:not([class*="rounded-full"]):not([class*="shadow-"]):not(input):not(textarea):not(select),
+[class~="bg-bg-mute"][class*="rounded-"]:not([class*="rounded-full"]):not([class*="shadow-"]):not(input):not(textarea):not(select) {
+  box-shadow: var(--shadow-surface);
+  transition: box-shadow 0.28s ease, border-color 0.28s ease;
+}
+
+[class~="bg-bg-soft"][class*="rounded-"]:not([class*="rounded-full"]):not([class*="shadow-"]):not(input):not(textarea):not(select):hover,
+[class~="bg-bg-mute"][class*="rounded-"]:not([class*="rounded-full"]):not([class*="shadow-"]):not(input):not(textarea):not(select):hover {
+  box-shadow: var(--shadow-surface-hover);
+}
+
+/* 表单控件保持「只有边框、无投影」，避免输入区显得脏 */
+input[class~="bg-bg-soft"],
+textarea[class~="bg-bg-soft"],
+select[class~="bg-bg-soft"] {
+  box-shadow: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [class~="bg-bg-soft"][class*="rounded-"],
+  [class~="bg-bg-mute"][class*="rounded-"] {
+    transition: none;
+  }
+}

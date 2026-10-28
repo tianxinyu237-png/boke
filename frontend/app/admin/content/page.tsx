@@ -9,6 +9,7 @@ import { loadResumeConfig, saveResumeConfig, type ResumeConfig, DEFAULT_RESUME }
 import { loadOneLinerConfig, saveOneLinerConfig, type OneLinerConfig, DEFAULT_ONE_LINER } from "@/lib/oneliner";
 import { AdminButton, showToast } from "@/components/admin/ui";
 import ProjectsEditor from "@/components/admin/projects-editor";
+import LinksEditor from "@/components/admin/links-editor";
 
 type Tab = "about" | "links" | "projects" | "theme" | "resume" | "oneliner";
 
@@ -77,8 +78,8 @@ const JSON_TEMPLATES: Record<Tab, string> = {
 export default function ContentManagementPage() {
   const [tab, setTab] = useState<Tab>("about");
   const [aboutJson, setAboutJson] = useState("");
-  const [linksJson, setLinksJson] = useState("");
   const [projectsList, setProjectsList] = useState<Project[]>([]);
+  const [linksConfig, setLinksConfig] = useState<LinksConfig>(DEFAULT_LINKS);
   const [themeJson, setThemeJson] = useState("");
   const [resumeJson, setResumeJson] = useState("");
   const [onelinerJson, setOnelinerJson] = useState("");
@@ -86,7 +87,7 @@ export default function ContentManagementPage() {
 
   useEffect(() => {
     loadAboutConfig().then((c) => setAboutJson(JSON.stringify({ bio: c.bio, techStack: c.techStack, contacts: c.contacts }, null, 2)));
-    loadLinksConfig().then((c) => setLinksJson(JSON.stringify(c, null, 2)));
+    loadLinksConfig().then((c) => setLinksConfig(c));
     loadProjectsConfig().then((c) => setProjectsList(c.projects));
     loadThemeConfig().then((c) => setThemeJson(JSON.stringify(c, null, 2)));
     loadResumeConfig().then((c) => setResumeJson(JSON.stringify(c, null, 2)));
@@ -95,7 +96,7 @@ export default function ContentManagementPage() {
 
   const jsonMap: Record<Tab, { val: string; set: (v: string) => void }> = {
     about: { val: aboutJson, set: setAboutJson },
-    links: { val: linksJson, set: setLinksJson },
+    links: { val: "", set: () => {} },
     projects: { val: "", set: () => {} },
     theme: { val: themeJson, set: setThemeJson },
     resume: { val: resumeJson, set: setResumeJson },
@@ -104,11 +105,21 @@ export default function ContentManagementPage() {
 
   const current = jsonMap[tab];
   const isValidJson = useMemo(() => {
-    if (tab === "projects") return true;
+    if (tab === "projects" || tab === "links") return true;
     try { JSON.parse(current.val); return true; } catch { return false; }
   }, [current.val, tab]);
 
   async function handleSave() {
+    if (tab === "links") {
+      setSaving(true);
+      try {
+        const ok = await saveLinksConfig(linksConfig);
+        showToast(ok ? "友链已保存" : "友链保存失败", ok ? "success" : "error");
+      } finally {
+        setSaving(false);
+      }
+      return;
+    }
     if (tab === "projects") {
       setSaving(true);
       try {
@@ -125,9 +136,6 @@ export default function ContentManagementPage() {
       switch (tab) {
         case "about":
           await saveAboutConfig({ ...DEFAULT_ABOUT, bio: parsed.bio || DEFAULT_ABOUT.bio, techStack: parsed.techStack || DEFAULT_ABOUT.techStack, contacts: parsed.contacts || DEFAULT_ABOUT.contacts });
-          break;
-        case "links":
-          await saveLinksConfig({ ...DEFAULT_LINKS, ...parsed });
           break;
         case "theme":
           await saveThemeConfig({ ...DEFAULT_THEME, ...parsed });
@@ -148,6 +156,7 @@ export default function ContentManagementPage() {
   }
 
   function handleFormat() {
+    if (tab === "projects" || tab === "links") return; // 表单编辑，无需格式化 JSON
     try {
       const parsed = JSON.parse(current.val);
       current.set(JSON.stringify(parsed, null, 2));
@@ -163,7 +172,7 @@ export default function ContentManagementPage() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-lg font-bold text-text-primary">内容管理</h2>
-          <p className="text-text-muted text-xs mt-1">编辑页面内容和样式配置（JSON格式）</p>
+          <p className="text-text-muted text-xs mt-1">项目和友链用表单编辑，其余为 JSON 配置</p>
         </div>
         <div className="flex items-center gap-2">
           <AdminButton variant="secondary" onClick={handleFormat} disabled={!isValidJson}>
@@ -201,16 +210,24 @@ export default function ContentManagementPage() {
           <div className="text-xs text-text-muted">{currentMeta.desc}</div>
         </div>
         <div className="ml-auto flex items-center gap-2">
-          <span className={`w-2 h-2 rounded-full ${isValidJson ? "bg-green-400" : "bg-red-400"}`} />
-          <span className={`text-xs ${isValidJson ? "text-green-400" : "text-red-400"}`}>
-            {isValidJson ? "JSON 有效" : "JSON 无效"}
-          </span>
+          {tab === "projects" || tab === "links" ? (
+            <span className="text-xs text-text-muted">表单编辑</span>
+          ) : (
+            <>
+              <span className={`w-2 h-2 rounded-full ${isValidJson ? "bg-green-400" : "bg-red-400"}`} />
+              <span className={`text-xs ${isValidJson ? "text-green-400" : "text-red-400"}`}>
+                {isValidJson ? "JSON 有效" : "JSON 无效"}
+              </span>
+            </>
+          )}
         </div>
       </div>
 
       {/* Editor */}
       {tab === "projects" ? (
         <ProjectsEditor projects={projectsList} onChange={setProjectsList} />
+      ) : tab === "links" ? (
+        <LinksEditor config={linksConfig} onChange={setLinksConfig} />
       ) : (
       <div className="bg-bg-soft border border-border rounded-xl overflow-hidden">
         <textarea
@@ -226,8 +243,8 @@ export default function ContentManagementPage() {
       </div>
       )}
 
-      {/* Template reference */}
-      {tab !== "projects" && (
+      {/* Template reference —— 表单类 tab（项目/友链）不需要 JSON 模板 */}
+      {tab !== "projects" && tab !== "links" && (
       <details className="bg-bg-soft border border-border rounded-xl overflow-hidden">
         <summary className="px-5 py-3 text-xs font-medium text-text-secondary cursor-pointer hover:text-text-primary transition-colors select-none">
           📋 {currentMeta.label} JSON 模板参考

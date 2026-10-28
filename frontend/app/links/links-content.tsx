@@ -32,12 +32,19 @@ export default function LinksContent() {
           Friends / Links
         </p>
         <h1 className="mt-3 font-wenkai text-[clamp(30px,4.8vw,46px)] leading-[1.12] tracking-[-0.02em] text-text-primary">
-          从一扇窗，走到另一扇窗
+          {links.pageTitle || "友链"}
         </h1>
         <p className="mt-3 text-[13px] text-text-muted">
-          常去的技术博客和朋友们的小站 · 共 {links.friends.length} 个
+          {links.pageSubtitle}
+          {links.pageSubtitle ? " · " : ""}共 {links.friends.length} 个
         </p>
       </motion.header>
+
+      {links.friends.length === 0 ? (
+        <p className="mt-12 text-[13px] text-text-muted">
+          还没有添加友链。到后台「内容管理 → 🔗友链」添加即可。
+        </p>
+      ) : null}
 
       {/* ── 友链网格：无卡片，方角头像 ── */}
       <div className="mt-12 grid grid-cols-1 gap-x-8 gap-y-7 sm:grid-cols-2 lg:grid-cols-3">
@@ -96,7 +103,15 @@ export default function LinksContent() {
 
         <div className="mt-5 grid gap-6 sm:grid-cols-[1fr_auto] sm:items-start">
           <div className="text-[13px] leading-relaxed text-text-secondary">
-            <p>欢迎交换友链。请先在您的博客添加本站链接，然后：</p>
+            <p>以下为本站信息，欢迎复制：</p>
+            {links.exchangeAvatar ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={links.exchangeAvatar}
+                alt=""
+                className="mb-4 h-12 w-12 rounded object-cover ring-1 ring-border/60"
+              />
+            ) : null}
             <dl className="mt-4 space-y-1.5 font-mono text-[11.5px] text-text-muted">
               <div className="flex gap-3">
                 <dt className="w-9 shrink-0 opacity-60">名称</dt>
@@ -104,16 +119,18 @@ export default function LinksContent() {
               </div>
               <div className="flex gap-3">
                 <dt className="w-9 shrink-0 opacity-60">地址</dt>
-                <dd className="break-all text-text-secondary">{origin || "…"}</dd>
+                <dd className="break-all text-text-secondary">{links.exchangeUrl || origin || "…"}</dd>
               </div>
               <div className="flex gap-3">
                 <dt className="w-9 shrink-0 opacity-60">描述</dt>
                 <dd className="text-text-secondary">{links.exchangeDesc}</dd>
               </div>
             </dl>
-            <p className="mt-4 text-[12px] text-text-muted">
-              添加后可通过评论区或 GitHub Issue 通知我。
-            </p>
+            {links.exchangeNote ? (
+              <p className="mt-4 text-[12px] leading-relaxed text-text-muted">
+                {links.exchangeNote}
+              </p>
+            ) : null}
           </div>
         </div>
       </div>

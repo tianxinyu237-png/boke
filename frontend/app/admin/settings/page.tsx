@@ -1,6 +1,8 @@
 "use client";
 
 import { useSiteConfig } from "@/components/site-config-provider";
+import { saveSiteConfigToServer } from "@/lib/site-config";
+import { handleSaveFailure } from "@/lib/config-save";
 import { useState } from "react";
 import { AdminInput, AdminButton, showToast } from "@/components/admin/ui";
 
@@ -8,12 +10,23 @@ export default function SiteSettingsPage() {
   const { config, update } = useSiteConfig();
   const [saving, setSaving] = useState(false);
 
-  function handleSave(e: React.FormEvent) {
+  async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
-    // Auto-save via SiteConfigProvider's update
-    showToast("站点设置已保存", "success");
-    setTimeout(() => setSaving(false), 1500);
+    try {
+      // 真正保存一次并等结果。
+      // 旧代码这里只弹了句「站点设置已保存」就结束，压根没调保存接口 ——
+      // 实际保存靠 provider 每次 onChange 自动 PUT，结果被静默丢弃，
+      // 所以换个 token、断个网，用户依然看到「已保存」，配置却根本没进库。
+      const res = await saveSiteConfigToServer(config);
+      if (res.ok) {
+        showToast("站点设置已保存", "success");
+      } else {
+        handleSaveFailure(res, showToast);
+      }
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (

@@ -1,3 +1,4 @@
+import { putSiteConfig, type SaveResult } from "./config-save";
 export interface ResumeEducation {
   period?: string;
   org?: string;
@@ -44,19 +45,6 @@ export async function loadResumeConfig(): Promise<ResumeConfig> {
   return DEFAULT_RESUME;
 }
 
-export async function saveResumeConfig(config: ResumeConfig): Promise<boolean> {
-  try {
-    const token = localStorage.getItem("admin_token");
-    const res = await fetch(`${API_BASE}/site-config`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        ...(token ? { "X-Api-Key": token } : {}),
-      },
-      body: JSON.stringify({ resumeConfig: JSON.stringify(config) }),
-    });
-    return res.ok;
-  } catch {
-    return false;
-  }
+export async function saveResumeConfig(config: ResumeConfig): Promise<SaveResult> {
+  return putSiteConfig("resumeConfig", config);
 }

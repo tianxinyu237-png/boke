@@ -10,6 +10,7 @@ import { loadOneLinerConfig, saveOneLinerConfig, type OneLinerConfig, DEFAULT_ON
 import { AdminButton, showToast } from "@/components/admin/ui";
 import ProjectsEditor from "@/components/admin/projects-editor";
 import LinksEditor from "@/components/admin/links-editor";
+import { handleSaveFailure, type SaveResult } from "@/lib/config-save";
 
 type Tab = "about" | "links" | "projects" | "theme" | "resume" | "oneliner";
 
@@ -110,46 +111,50 @@ export default function ContentManagementPage() {
   }, [current.val, tab]);
 
   async function handleSave() {
-    if (tab === "links") {
-      setSaving(true);
-      try {
-        const ok = await saveLinksConfig(linksConfig);
-        showToast(ok ? "友链已保存" : "友链保存失败", ok ? "success" : "error");
-      } finally {
-        setSaving(false);
-      }
-      return;
-    }
-    if (tab === "projects") {
-      setSaving(true);
-      try {
-        await saveProjectsConfig({ projects: projectsList });
-        showToast("内容已保存", "success");
-      } finally {
-        setSaving(false);
-      }
-      return;
-    }
+    setSaving(true);
     try {
-      setSaving(true);
-      const parsed = JSON.parse(current.val);
-      switch (tab) {
-        case "about":
-          await saveAboutConfig({ ...DEFAULT_ABOUT, bio: parsed.bio || DEFAULT_ABOUT.bio, techStack: parsed.techStack || DEFAULT_ABOUT.techStack, contacts: parsed.contacts || DEFAULT_ABOUT.contacts });
-          break;
-        case "theme":
-          await saveThemeConfig({ ...DEFAULT_THEME, ...parsed });
-          break;
-        case "resume":
-          await saveResumeConfig({ ...DEFAULT_RESUME, ...parsed });
-          break;
-        case "oneliner":
-          await saveOneLinerConfig({ ...DEFAULT_ONE_LINER, lines: Array.isArray(parsed.lines) ? parsed.lines : DEFAULT_ONE_LINER.lines });
-          break;
+      let res: SaveResult;
+
+      if (tab === "links") {
+        res = await saveLinksConfig(linksConfig);
+      } else if (tab === "projects") {
+        res = await saveProjectsConfig({ projects: projectsList });
+      } else {
+        // 其余 tab 走 JSON 编辑器
+        let parsed: any;
+        try {
+          parsed = JSON.parse(current.val);
+        } catch (e: any) {
+          showToast("JSON 格式错误: " + e.message, "error");
+          return;
+        }
+        switch (tab) {
+          case "about":
+            res = await saveAboutConfig({ ...DEFAULT_ABOUT, bio: parsed.bio || DEFAULT_ABOUT.bio, techStack: parsed.techStack || DEFAULT_ABOUT.techStack, contacts: parsed.contacts || DEFAULT_ABOUT.contacts });
+            break;
+          case "theme":
+            res = await saveThemeConfig({ ...DEFAULT_THEME, ...parsed });
+            break;
+          case "resume":
+            res = await saveResumeConfig({ ...DEFAULT_RESUME, ...parsed });
+            break;
+          case "oneliner":
+            res = await saveOneLinerConfig({ ...DEFAULT_ONE_LINER, lines: Array.isArray(parsed.lines) ? parsed.lines : DEFAULT_ONE_LINER.lines });
+            break;
+          default:
+            showToast("这个页签没有可保存的内容", "error");
+            return;
+        }
       }
-      showToast("内容已保存", "success");
-    } catch (e: any) {
-      showToast("JSON 格式错误: " + e.message, "error");
+
+      // 只有真的成功了才说「已保存」。
+      // 旧代码在这里无条件弹成功提示，所以即使被 401 拒了也显示「内容已保存」，
+      // 和上面那条「保存失败」互相矛盾，看日志完全分不清到底存没存进去。
+      if (res.ok) {
+        showToast(tab === "links" ? "友链已保存" : "内容已保存", "success");
+      } else {
+        handleSaveFailure(res, showToast);
+      }
     } finally {
       setSaving(false);
     }

@@ -1,3 +1,4 @@
+import { putSiteConfig, type SaveResult } from "./config-save";
 export interface SiteConfig {
   name: string;
   description: string;
@@ -67,21 +68,8 @@ export async function loadSiteConfigFromServer(): Promise<SiteConfig | null> {
 }
 
 /** Save site config to server (requires admin token) */
-export async function saveSiteConfigToServer(config: SiteConfig): Promise<boolean> {
-  try {
-    const token = localStorage.getItem("admin_token");
-    const res = await fetch(`${API_BASE}/site-config`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        ...(token ? { "X-Api-Key": token } : {}),
-      },
-      body: JSON.stringify({ siteConfig: JSON.stringify(config) }),
-    });
-    return res.ok;
-  } catch {
-    return false;
-  }
+export async function saveSiteConfigToServer(config: SiteConfig): Promise<SaveResult> {
+  return putSiteConfig("siteConfig", config);
 }
 
 /** Hybrid: server first, localStorage fallback, cache server result */

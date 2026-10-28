@@ -1,3 +1,4 @@
+import { putSiteConfig, type SaveResult } from "./config-save";
 export interface TechStack {
   name: string;
   desc?: string;
@@ -73,19 +74,6 @@ export async function loadAboutConfig(): Promise<AboutConfig> {
   return DEFAULT_ABOUT;
 }
 
-export async function saveAboutConfig(config: AboutConfig): Promise<boolean> {
-  try {
-    const token = localStorage.getItem("admin_token");
-    const res = await fetch(`${API_BASE}/site-config`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        ...(token ? { "X-Api-Key": token } : {}),
-      },
-      body: JSON.stringify({ aboutConfig: JSON.stringify(config) }),
-    });
-    return res.ok;
-  } catch {
-    return false;
-  }
+export async function saveAboutConfig(config: AboutConfig): Promise<SaveResult> {
+  return putSiteConfig("aboutConfig", config);
 }

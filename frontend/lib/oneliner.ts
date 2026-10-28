@@ -1,3 +1,4 @@
+import { putSiteConfig, type SaveResult } from "./config-save";
 export interface OneLinerConfig {
   lines: string[];
 }
@@ -52,19 +53,6 @@ export async function loadOneLinerConfig(): Promise<OneLinerConfig> {
   return DEFAULT_ONE_LINER;
 }
 
-export async function saveOneLinerConfig(config: OneLinerConfig): Promise<boolean> {
-  try {
-    const token = localStorage.getItem("admin_token");
-    const res = await fetch(`${API_BASE}/site-config`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        ...(token ? { "X-Api-Key": token } : {}),
-      },
-      body: JSON.stringify({ oneLinerConfig: JSON.stringify(config) }),
-    });
-    return res.ok;
-  } catch {
-    return false;
-  }
+export async function saveOneLinerConfig(config: OneLinerConfig): Promise<SaveResult> {
+  return putSiteConfig("oneLinerConfig", config);
 }

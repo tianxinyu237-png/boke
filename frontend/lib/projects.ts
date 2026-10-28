@@ -1,3 +1,4 @@
+import { putSiteConfig, type SaveResult } from "./config-save";
 export interface ProjectLink {
   label: string;
   url: string;
@@ -125,21 +126,8 @@ export async function loadProjectsConfig(): Promise<ProjectsConfig> {
   return DEFAULT_PROJECTS;
 }
 
-export async function saveProjectsConfig(config: ProjectsConfig): Promise<boolean> {
-  try {
-    const token = localStorage.getItem("admin_token");
-    const res = await fetch(`${API_BASE}/site-config`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        ...(token ? { "X-Api-Key": token } : {}),
-      },
-      body: JSON.stringify({ projectsConfig: JSON.stringify(config) }),
-    });
-    return res.ok;
-  } catch {
-    return false;
-  }
+export async function saveProjectsConfig(config: ProjectsConfig): Promise<SaveResult> {
+  return putSiteConfig("projectsConfig", config);
 }
 
 /* ------------------------------------------------------------------ *

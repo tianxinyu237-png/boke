@@ -1,3 +1,4 @@
+import { putSiteConfig, type SaveResult } from "./config-save";
 /* ══════════════════════════════════════════════════════════════
    友链配置（2026-10-28 扩展）
 
@@ -80,19 +81,6 @@ export async function loadLinksConfig(): Promise<LinksConfig> {
   return DEFAULT_LINKS;
 }
 
-export async function saveLinksConfig(config: LinksConfig): Promise<boolean> {
-  try {
-    const token = localStorage.getItem("admin_token");
-    const res = await fetch(`${API_BASE}/site-config`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        ...(token ? { "X-Api-Key": token } : {}),
-      },
-      body: JSON.stringify({ linksConfig: JSON.stringify(config) }),
-    });
-    return res.ok;
-  } catch {
-    return false;
-  }
+export async function saveLinksConfig(config: LinksConfig): Promise<SaveResult> {
+  return putSiteConfig("linksConfig", config);
 }

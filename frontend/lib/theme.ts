@@ -1,3 +1,4 @@
+import { putSiteConfig, type SaveResult } from "./config-save";
 export interface ThemeColors {
   dark: {
     accent: string;
@@ -100,21 +101,8 @@ export async function loadThemeConfig(): Promise<ThemeColors> {
   return DEFAULT_THEME;
 }
 
-export async function saveThemeConfig(config: ThemeColors): Promise<boolean> {
-  try {
-    const token = localStorage.getItem("admin_token");
-    const res = await fetch(`${API_BASE}/site-config`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        ...(token ? { "X-Api-Key": token } : {}),
-      },
-      body: JSON.stringify({ themeConfig: JSON.stringify(config) }),
-    });
-    return res.ok;
-  } catch {
-    return false;
-  }
+export async function saveThemeConfig(config: ThemeColors): Promise<SaveResult> {
+  return putSiteConfig("themeConfig", config);
 }
 
 /** Apply theme colors to CSS variables on <html> */

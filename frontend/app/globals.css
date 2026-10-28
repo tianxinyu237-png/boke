@@ -376,17 +376,17 @@ body.has-custom-bg .backdrop-blur-2xl {
   border: 1px solid rgb(255 255 255 / 0.09);
   border-radius: 16px;
   box-shadow:
-    0 24px 70px -24px rgb(0 0 0 / 0.55),   /* 浮起：说明板子在壁纸之上 */
-    0 2px 8px -2px rgb(0 0 0 / 0.25),
-    inset 0 1px 0 rgb(255 255 255 / 0.07); /* 顶部内高光：玻璃切边的感觉 */
+    0 30px 90px -24px rgb(0 0 0 / 0.78),   /* 浮起：说明板子在壁纸之上（2026-10-28 加深一档） */
+    0 6px 18px -6px rgb(0 0 0 / 0.48),     /* 贴边投影，让轮廓更实 */
+    inset 0 1px 0 rgb(255 255 255 / 0.10); /* 顶部内高光：玻璃切边的感觉 */
 }
 .light .page-transition-wrap > div[class*="max-w-"] {
   background-color: rgb(var(--color-bg) / 0.30);
   border-color: rgb(0 0 0 / 0.07);
   box-shadow:
-    0 24px 70px -24px rgb(0 0 0 / 0.20),
-    0 2px 8px -2px rgb(0 0 0 / 0.06),
-    inset 0 1px 0 rgb(255 255 255 / 0.55);
+    0 30px 90px -24px rgb(0 0 0 / 0.30),
+    0 6px 18px -6px rgb(0 0 0 / 0.12),
+    inset 0 1px 0 rgb(255 255 255 / 0.60);
 }
 /* 导航横向滚动时不显示滚动条 (移动端) */
 .no-scrollbar::-webkit-scrollbar {

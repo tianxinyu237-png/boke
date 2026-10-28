@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { AdminInput, AdminTextarea, AdminButton, showToast, AdminConfirmDialog } from "./ui";
-import type { LinksConfig, Friend } from "@/lib/links";
+import { saveLinksConfig, type LinksConfig, type Friend } from "@/lib/links";
+import { handleSaveFailure } from "@/lib/config-save";
 
 /* ══════════════════════════════════════════════════════════════
    友链编辑器（2026-10-28 新建）
@@ -27,8 +28,53 @@ interface Props {
 export default function LinksEditor({ config, onChange }: Props) {
   const [editing, setEditing] = useState<{ index: number; draft: Friend } | null>(null);
   const [removing, setRemoving] = useState<number | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [dirty, setDirty] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const friends = config.friends || [];
+
+  useEffect(() => () => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+  }, []);
+
+  /* ── 立即保存：添加 / 编辑 / 删除 / 排序这类离散操作 ──
+     原实现只把改动塞进父组件的 state，必须再点右上角「保存设置」才入库，
+     用户点完「添加友链」看到列表变了就去刷新，改动自然全丢。
+     现在这些操作直接落库，不需要任何额外点击。 */
+  async function persistNow(next: LinksConfig, successMsg: string) {
+    onChange(next);
+    setSaving(true);
+    try {
+      const res = await saveLinksConfig(next);
+      if (res.ok) {
+        showToast(successMsg, "success");
+        setDirty(false);
+      } else {
+        handleSaveFailure(res, showToast);
+        setDirty(true);
+      }
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  /* ── 防抖保存：文案输入框每敲一个字都会触发，攒 900ms 再写 ── */
+  function persistSoon(next: LinksConfig) {
+    onChange(next);
+    setDirty(true);
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(async () => {
+      setSaving(true);
+      try {
+        const res = await saveLinksConfig(next);
+        if (res.ok) setDirty(false);
+        else handleSaveFailure(res, showToast);
+      } finally {
+        setSaving(false);
+      }
+    }, 900);
+  }
 
   function startAdd() {
     setEditing({ index: -1, draft: { name: "", url: "", desc: "", avatar: "" } });
@@ -42,7 +88,7 @@ export default function LinksEditor({ config, onChange }: Props) {
     setEditing((e) => (e ? { ...e, draft: { ...e.draft, ...patch } } : e));
   }
 
-  function commit() {
+  async function commit() {
     if (!editing) return;
     const d = editing.draft;
     if (!d.name.trim()) {
@@ -63,26 +109,27 @@ export default function LinksEditor({ config, onChange }: Props) {
       avatar: (d.avatar || "").trim(),
     };
     const list = [...friends];
-    if (editing.index === -1) list.push(clean);
+    const isNew = editing.index === -1;
+    if (isNew) list.push(clean);
     else list[editing.index] = clean;
-    onChange({ ...config, friends: list });
-    showToast(editing.index === -1 ? "友链已添加" : "友链已更新", "success");
     setEditing(null);
+    await persistNow({ ...config, friends: list }, isNew ? "友链已添加并保存" : "友链已更新并保存");
   }
 
-  function doRemove() {
+  async function doRemove() {
     if (removing === null) return;
-    onChange({ ...config, friends: friends.filter((_, i) => i !== removing) });
-    showToast("友链已删除", "success");
+    const target = friends[removing];
+    const list = friends.filter((_, i) => i !== removing);
     setRemoving(null);
+    await persistNow({ ...config, friends: list }, `已删除「${target?.name || ""}」`);
   }
 
-  function move(index: number, dir: -1 | 1) {
+  async function move(index: number, dir: -1 | 1) {
     const target = index + dir;
     if (target < 0 || target >= friends.length) return;
     const list = [...friends];
     [list[index], list[target]] = [list[target], list[index]];
-    onChange({ ...config, friends: list });
+    await persistNow({ ...config, friends: list }, "顺序已保存");
   }
 
   function renderForm() {
@@ -128,21 +175,33 @@ export default function LinksEditor({ config, onChange }: Props) {
 
   return (
     <div className="space-y-7">
+      {/* 自动保存状态：这三行的存在是因为之前「改动只在内存、要另点保存设置」把人坑过 */}
+      <div className="flex items-center gap-2 rounded-lg border border-border bg-bg-soft/50 px-3 py-2">
+        <span
+          className={`h-1.5 w-1.5 rounded-full ${
+            saving ? "bg-accent animate-pulse" : dirty ? "bg-amber-400" : "bg-green-400"
+          }`}
+        />
+        <span className="text-[11.5px] text-text-muted">
+          {saving ? "保存中…" : dirty ? "有改动未保存" : "已自动保存，无需手动点保存"}
+        </span>
+      </div>
+
       {/* ───── ① 页面文案 ───── */}
       <section>
         <h3 className="mb-1 text-[13px] font-semibold text-text-primary">页面文案</h3>
-        <p className="mb-3 text-[11px] text-text-muted">友链页顶部的大标题和一行说明</p>
+        <p className="mb-3 text-[11px] text-text-muted">友链页顶部的大标题和一行说明（输入后自动保存）</p>
         <div className="space-y-3">
           <AdminInput
             label="大标题"
             value={config.pageTitle || ""}
-            onChange={(e) => onChange({ ...config, pageTitle: e.target.value })}
+            onChange={(e) => persistSoon({ ...config, pageTitle: e.target.value })}
             placeholder="从一扇窗，走到另一扇窗"
           />
           <AdminInput
             label="副标题"
             value={config.pageSubtitle || ""}
-            onChange={(e) => onChange({ ...config, pageSubtitle: e.target.value })}
+            onChange={(e) => persistSoon({ ...config, pageSubtitle: e.target.value })}
             placeholder="常去的技术博客和朋友们的小站"
           />
         </div>
@@ -159,7 +218,7 @@ export default function LinksEditor({ config, onChange }: Props) {
               </span>
             </h3>
             <p className="mt-0.5 text-[11px] text-text-muted">
-              顺序即页面上的显示顺序，可用 ↑↓ 调整
+              顺序即页面上的显示顺序，可用 ↑↓ 调整 · 增删改自动保存
             </p>
           </div>
           {!editing && <AdminButton onClick={startAdd}>+ 添加友链</AdminButton>}
@@ -252,31 +311,31 @@ export default function LinksEditor({ config, onChange }: Props) {
           <AdminInput
             label="本站名称"
             value={config.exchangeName || ""}
-            onChange={(e) => onChange({ ...config, exchangeName: e.target.value })}
+            onChange={(e) => persistSoon({ ...config, exchangeName: e.target.value })}
             placeholder="田"
           />
           <AdminInput
             label="本站地址（留空则自动用当前域名）"
             value={config.exchangeUrl || ""}
-            onChange={(e) => onChange({ ...config, exchangeUrl: e.target.value })}
+            onChange={(e) => persistSoon({ ...config, exchangeUrl: e.target.value })}
             placeholder="https://tianxinyv.top"
           />
           <AdminInput
             label="本站描述"
             value={config.exchangeDesc || ""}
-            onChange={(e) => onChange({ ...config, exchangeDesc: e.target.value })}
+            onChange={(e) => persistSoon({ ...config, exchangeDesc: e.target.value })}
             placeholder="关于代码、系统和工程的深度思考"
           />
           <AdminInput
             label="本站头像 URL"
             value={config.exchangeAvatar || ""}
-            onChange={(e) => onChange({ ...config, exchangeAvatar: e.target.value })}
+            onChange={(e) => persistSoon({ ...config, exchangeAvatar: e.target.value })}
             placeholder="https://example.com/avatar.png"
           />
           <AdminTextarea
             label="交换说明"
             value={config.exchangeNote || ""}
-            onChange={(e) => onChange({ ...config, exchangeNote: e.target.value })}
+            onChange={(e) => persistSoon({ ...config, exchangeNote: e.target.value })}
             placeholder="欢迎交换友链。请先在您的博客添加本站链接…"
             rows={3}
           />

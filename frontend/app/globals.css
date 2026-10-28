@@ -352,9 +352,10 @@ pre.shiki[data-language]::before {
 }
 
 body.has-custom-bg .glass-card {
-  /* 半透明：叠在 0.62 的容器上，综合约 0.81 —— 卡片仍有独立块感，
-     但不再是一块死黑，壁纸的明暗过渡能隐约透上来 */
-  background: rgb(var(--color-bg-soft) / 0.32);
+  /* 容器已经很淡（0.20），卡片单独实一点（0.62）：
+     壁纸在容器空白处清清楚楚，正文所在卡片里则压得住字。
+     两层之间产生明暗差 → 更容易看出"面板 + 面板上的块"这种图层关系 */
+  background: rgb(var(--color-bg-soft) / 0.62);
   border-color: rgb(var(--color-border) / 0.15);
 }
 body.has-custom-bg .backdrop-blur-md,
@@ -363,23 +364,29 @@ body.has-custom-bg .backdrop-blur-2xl {
   --tw-backdrop-blur: blur(4px);
 }
 
-/* ══ 内容容器半透明底（2026-10-28 改，替换 08-15 的实色方案A）══
-   旧做法：background-color: rgb(var(--color-bg)) —— 不透明深色，
-   整块内容区像一大片黑，把背景壁纸完全挡住。
-   现在：半透明 + 毛玻璃。壁纸能透出来（被 blur 虚化），
-   而 blur 同时压掉了背景细节的对比度，正文依然清晰可读。
-   · 有壁纸时 = 隔着一层磨砂玻璃看壁纸
-   · 没壁纸时 = 叠在同色底上，视觉与原来一致，无副作用 */
+/* ══ 内容容器：淡色板 + 明确边界（2026-10-28 第三次调整）══
+   目标是「能看出背景前面盖了一层」，而不是把背景糊掉：
+     · 不要 blur        —— 壁纸该清楚就清楚，模糊反而看不出壁纸本身
+     · 不要实色         —— 实色把壁纸完全挡住，成了一片死黑
+     · 不要纯透明       —— 纯透明完全没有图层感，像没有面板
+   所以：很低的填充（0.20）+ 一条细边框 + 浮起阴影 + 顶部内高光。
+   边界比填充更重要 —— 人眼判断"这里有一层"靠的是轮廓，不是遮挡程度。 */
 .page-transition-wrap > div[class*="max-w-"] {
-  background-color: rgb(var(--color-bg) / 0.40);
-  backdrop-filter: blur(24px) saturate(1.2);
-  -webkit-backdrop-filter: blur(24px) saturate(1.2);
+  background-color: rgb(var(--color-bg) / 0.20);
+  border: 1px solid rgb(255 255 255 / 0.09);
   border-radius: 16px;
-  box-shadow: 0 12px 40px rgb(0 0 0 / 0.28);
+  box-shadow:
+    0 24px 70px -24px rgb(0 0 0 / 0.55),   /* 浮起：说明板子在壁纸之上 */
+    0 2px 8px -2px rgb(0 0 0 / 0.25),
+    inset 0 1px 0 rgb(255 255 255 / 0.07); /* 顶部内高光：玻璃切边的感觉 */
 }
 .light .page-transition-wrap > div[class*="max-w-"] {
-  background-color: rgb(var(--color-bg) / 0.46);
-  box-shadow: 0 12px 40px rgb(0 0 0 / 0.08);
+  background-color: rgb(var(--color-bg) / 0.30);
+  border-color: rgb(0 0 0 / 0.07);
+  box-shadow:
+    0 24px 70px -24px rgb(0 0 0 / 0.20),
+    0 2px 8px -2px rgb(0 0 0 / 0.06),
+    inset 0 1px 0 rgb(255 255 255 / 0.55);
 }
 /* 导航横向滚动时不显示滚动条 (移动端) */
 .no-scrollbar::-webkit-scrollbar {

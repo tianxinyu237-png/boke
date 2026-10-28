@@ -4,6 +4,12 @@ import { useState, useEffect } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { loadLinksConfig, type LinksConfig, DEFAULT_LINKS } from "@/lib/links";
 
+/* ── 友链页 ──
+   参考 blog.liveout.cn/friends 的做法：不用卡片！
+   每条友链就是一个「方角头像 + 名字 + 一句描述」的三列网格，
+   没有边框、没有圆角、没有背景色 —— 靠留白和字距撑住版面。
+   （liveout 实测：卡 356×132，头像 52×52 方角，名字 15.5px/600，
+     描述 12.3px，3 列 gap 16px，页面大标题 48px） */
 export default function LinksContent() {
   const reduce = useReducedMotion();
   const [links, setLinks] = useState<LinksConfig>(DEFAULT_LINKS);
@@ -16,20 +22,25 @@ export default function LinksContent() {
 
   return (
     <div className="mx-auto max-w-[1024px] px-5 pt-12 pb-24 sm:px-8">
-      <motion.div
+      {/* ── 页头 ── */}
+      <motion.header
         initial={reduce ? {} : { opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
       >
-        <h1 className="text-2xl font-bold tracking-tight text-text-primary mb-2">
-          友链
-        </h1>
-        <p className="text-text-muted text-sm mb-10">
-          常去的技术博客和朋友们的小站
+        <p className="text-[10px] font-medium uppercase tracking-[0.24em] text-text-muted">
+          Friends / Links
         </p>
-      </motion.div>
+        <h1 className="mt-3 font-wenkai text-[clamp(30px,4.8vw,46px)] leading-[1.12] tracking-[-0.02em] text-text-primary">
+          从一扇窗，走到另一扇窗
+        </h1>
+        <p className="mt-3 text-[13px] text-text-muted">
+          常去的技术博客和朋友们的小站 · 共 {links.friends.length} 个
+        </p>
+      </motion.header>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      {/* ── 友链网格：无卡片，方角头像 ── */}
+      <div className="mt-12 grid grid-cols-1 gap-x-8 gap-y-7 sm:grid-cols-2 lg:grid-cols-3">
         {links.friends.map((friend, i) => (
           <motion.a
             key={friend.url}
@@ -38,39 +49,72 @@ export default function LinksContent() {
             rel="noopener noreferrer"
             initial={reduce ? {} : { opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: i * 0.05 }}
-            className="glass-card group flex items-center gap-4 px-4 py-3.5 hover:border-accent/40"
+            transition={{ duration: 0.3, delay: i * 0.04 }}
+            className="group flex items-start gap-3.5"
           >
-            <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center text-accent text-sm font-bold shrink-0 ring-1 ring-accent/20">
+            {/* 52×52 方角头像（不是圆形） */}
+            <span className="flex h-[52px] w-[52px] shrink-0 items-center justify-center overflow-hidden bg-bg-mute/70 text-[15px] font-semibold text-text-muted ring-1 ring-border/60 transition-colors group-hover:ring-accent/40">
               {friend.avatar ? (
-                <img src={friend.avatar} alt="" className="w-full h-full rounded-full object-cover" />
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={friend.avatar}
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                  className="h-full w-full object-cover"
+                />
               ) : (
-                friend.name[0]
+                friend.name.slice(0, 1)
               )}
-            </div>
-            <div className="min-w-0">
-              <div className="text-sm font-medium text-text-primary group-hover:text-accent transition-colors truncate">
+            </span>
+
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-[15px] font-semibold leading-snug text-text-primary transition-colors group-hover:text-accent">
                 {friend.name}
-              </div>
-              <div className="text-xs text-text-muted truncate">{friend.desc}</div>
-            </div>
+              </span>
+              {friend.desc ? (
+                <span className="mt-1 block line-clamp-2 text-[12px] leading-relaxed text-text-muted">
+                  {friend.desc}
+                </span>
+              ) : null}
+              <span className="mt-1.5 block truncate font-mono text-[10px] text-text-muted/60">
+                {friend.url.replace(/^https?:\/\//, "").replace(/\/$/, "")}
+              </span>
+            </span>
           </motion.a>
         ))}
       </div>
 
-      {/* Exchange info */}
-      <div className="mt-16 pt-8 border-t border-border">
-        <h2 className="text-lg font-semibold text-text-primary mb-4">友链交换</h2>
-        <div className="bg-bg-soft border border-border rounded-xl p-5 text-sm text-text-secondary space-y-2">
-          <p>欢迎交换友链！请先在您的博客添加本站链接，然后：</p>
-          <div className="bg-bg border border-border rounded-lg p-3 font-mono text-xs text-text-muted">
-            <div>名称：{links.exchangeName}</div>
-            <div>地址：{origin}</div>
-            <div>描述：{links.exchangeDesc}</div>
+      {/* ── 友链交换（保留原有功能）── */}
+      <div className="mt-20 border-t border-border pt-8">
+        <p className="text-[10px] font-medium uppercase tracking-[0.24em] text-text-muted">
+          Exchange
+        </p>
+        <h2 className="mt-1.5 font-wenkai text-[24px] leading-tight text-text-primary">
+          友链交换
+        </h2>
+
+        <div className="mt-5 grid gap-6 sm:grid-cols-[1fr_auto] sm:items-start">
+          <div className="text-[13px] leading-relaxed text-text-secondary">
+            <p>欢迎交换友链。请先在您的博客添加本站链接，然后：</p>
+            <dl className="mt-4 space-y-1.5 font-mono text-[11.5px] text-text-muted">
+              <div className="flex gap-3">
+                <dt className="w-9 shrink-0 opacity-60">名称</dt>
+                <dd className="text-text-secondary">{links.exchangeName}</dd>
+              </div>
+              <div className="flex gap-3">
+                <dt className="w-9 shrink-0 opacity-60">地址</dt>
+                <dd className="break-all text-text-secondary">{origin || "…"}</dd>
+              </div>
+              <div className="flex gap-3">
+                <dt className="w-9 shrink-0 opacity-60">描述</dt>
+                <dd className="text-text-secondary">{links.exchangeDesc}</dd>
+              </div>
+            </dl>
+            <p className="mt-4 text-[12px] text-text-muted">
+              添加后可通过评论区或 GitHub Issue 通知我。
+            </p>
           </div>
-          <p className="text-text-muted text-xs">
-            添加后可通过评论区或 GitHub Issue 通知我。
-          </p>
         </div>
       </div>
     </div>

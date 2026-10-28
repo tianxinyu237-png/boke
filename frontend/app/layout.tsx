@@ -8,7 +8,6 @@ import FloatingParticles from "@/components/floating-particles";
 import BackgroundLayer from "@/components/background-layer";
 import SmoothScroll from "@/components/smooth-scroll";
 import WelcomeOverlay from "@/components/welcome-overlay";
-import FontLoader from "@/components/font-loader";
 import ThemeLoader from "@/components/theme-loader";
 import PetCat from "@/components/pet-cat";
 import EasterEggs from "@/components/easter-eggs";
@@ -155,7 +154,6 @@ export default async function RootLayout({
         </ThemeProvider>
         <WelcomeOverlay initialBgConfig={cfg.bgConfig} />
         <ThemeLoader initialTheme={cfg.themeConfig} />
-        <FontLoader />
         <BackgroundLayer initialConfig={cfg.bgConfig} />
         <FloatingParticles />
         <PetCat />

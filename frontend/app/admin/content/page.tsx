@@ -4,20 +4,18 @@ import { useState, useEffect, useMemo } from "react";
 import { loadAboutConfig, saveAboutConfig, type AboutConfig, DEFAULT_ABOUT } from "@/lib/about";
 import { loadLinksConfig, saveLinksConfig, type LinksConfig, DEFAULT_LINKS } from "@/lib/links";
 import { loadProjectsConfig, saveProjectsConfig, type Project } from "@/lib/projects";
-import { loadMusicConfig, saveMusicConfig, type MusicConfig, DEFAULT_MUSIC } from "@/lib/music";
 import { loadThemeConfig, saveThemeConfig, type ThemeColors, DEFAULT_THEME } from "@/lib/theme";
 import { loadResumeConfig, saveResumeConfig, type ResumeConfig, DEFAULT_RESUME } from "@/lib/resume";
 import { loadOneLinerConfig, saveOneLinerConfig, type OneLinerConfig, DEFAULT_ONE_LINER } from "@/lib/oneliner";
 import { AdminButton, showToast } from "@/components/admin/ui";
 import ProjectsEditor from "@/components/admin/projects-editor";
 
-type Tab = "about" | "links" | "projects" | "music" | "theme" | "resume" | "oneliner";
+type Tab = "about" | "links" | "projects" | "theme" | "resume" | "oneliner";
 
 const tabMeta: Record<Tab, { label: string; icon: string; desc: string }> = {
   about:    { label: "关于页",   icon: "👤", desc: "个人简介、技术栈、联系方式" },
   links:    { label: "友链",     icon: "🔗", desc: "友情链接和交换信息" },
   projects: { label: "项目",     icon: "🚀", desc: "项目展示卡片(表单编辑,支持增删排序)" },
-  music:    { label: "音乐",     icon: "🎵", desc: "黑胶播放器曲目列表" },
   theme:    { label: "主题色",   icon: "🎨", desc: "深色/浅色模式配色方案" },
   resume:   { label: "简历",     icon: "📄", desc: "简历页定位语、经历时间线、CTA 文案" },
   oneliner: { label: "一言",     icon: "✨", desc: "右下角一言挂件文案库,每行一句" },
@@ -41,11 +39,6 @@ const JSON_TEMPLATES: Record<Tab, string> = {
   projects: `{
   "projects": [
     { "name": "项目名", "url": "https://...", "description": "描述", "icon": "🚀" }
-  ]
-}`,
-  music: `{
-  "playlist": [
-    { "title": "歌曲名", "artist": "艺术家", "url": "/music/song.mp3", "cover": "/music/cover.jpg" }
   ]
 }`,
   theme: `{
@@ -86,7 +79,6 @@ export default function ContentManagementPage() {
   const [aboutJson, setAboutJson] = useState("");
   const [linksJson, setLinksJson] = useState("");
   const [projectsList, setProjectsList] = useState<Project[]>([]);
-  const [musicJson, setMusicJson] = useState("");
   const [themeJson, setThemeJson] = useState("");
   const [resumeJson, setResumeJson] = useState("");
   const [onelinerJson, setOnelinerJson] = useState("");
@@ -96,7 +88,6 @@ export default function ContentManagementPage() {
     loadAboutConfig().then((c) => setAboutJson(JSON.stringify({ bio: c.bio, techStack: c.techStack, contacts: c.contacts }, null, 2)));
     loadLinksConfig().then((c) => setLinksJson(JSON.stringify(c, null, 2)));
     loadProjectsConfig().then((c) => setProjectsList(c.projects));
-    loadMusicConfig().then((c) => setMusicJson(JSON.stringify(c, null, 2)));
     loadThemeConfig().then((c) => setThemeJson(JSON.stringify(c, null, 2)));
     loadResumeConfig().then((c) => setResumeJson(JSON.stringify(c, null, 2)));
     loadOneLinerConfig().then((c) => setOnelinerJson(JSON.stringify(c, null, 2)));
@@ -106,7 +97,6 @@ export default function ContentManagementPage() {
     about: { val: aboutJson, set: setAboutJson },
     links: { val: linksJson, set: setLinksJson },
     projects: { val: "", set: () => {} },
-    music: { val: musicJson, set: setMusicJson },
     theme: { val: themeJson, set: setThemeJson },
     resume: { val: resumeJson, set: setResumeJson },
     oneliner: { val: onelinerJson, set: setOnelinerJson },
@@ -138,9 +128,6 @@ export default function ContentManagementPage() {
           break;
         case "links":
           await saveLinksConfig({ ...DEFAULT_LINKS, ...parsed });
-          break;
-        case "music":
-          await saveMusicConfig({ ...DEFAULT_MUSIC, ...parsed });
           break;
         case "theme":
           await saveThemeConfig({ ...DEFAULT_THEME, ...parsed });

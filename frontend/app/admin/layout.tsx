@@ -21,10 +21,10 @@ function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => 
       label: "内容",
       items: [
         { href: "/admin/dashboard", label: "文章管理", icon: IconPosts, matchPaths: ["/admin/posts"] },
-        { href: "/admin/projects", label: "项目管理", icon: IconProject },
         { href: "/admin/posts/new", label: "新建文章", icon: IconNew },
         { href: "/admin/notes", label: "笔记", icon: IconNotes },
         { href: "/admin/moments", label: "碎碎念", icon: IconMoment },
+        { href: "/admin/music", label: "音乐", icon: IconMusic },
       ],
     },
     {
@@ -40,7 +40,6 @@ function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => 
         { href: "/admin/particles", label: "粒子动效", icon: IconSparkles },
         { href: "/admin/pet", label: "看板猫", icon: IconCat },
         { href: "/admin/background", label: "背景设置", icon: IconBg },
-        { href: "/admin/fonts", label: "字体设置", icon: IconFont },
       ],
     },
     {

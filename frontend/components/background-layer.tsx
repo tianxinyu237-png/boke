@@ -64,6 +64,7 @@ export default function BackgroundLayer({ initialConfig }: { initialConfig?: Bac
     document.body.style.backgroundSize = "";
     document.body.style.backgroundPosition = "";
     document.body.style.backgroundRepeat = "";
+    document.body.style.backgroundAttachment = "";
   }
 
   useEffect(() => {
@@ -106,6 +107,10 @@ export default function BackgroundLayer({ initialConfig }: { initialConfig?: Bac
       document.body.style.backgroundSize = "cover";
       document.body.style.backgroundPosition = "center";
       document.body.style.backgroundRepeat = "no-repeat";
+      // 关键：不加 fixed 时 cover 会按「整页高度」缩放 —— 首页 2400px、
+      // 文章页 18954px，同一张图在长页面被放大到失真，短页面却正常。
+      // fixed 让背景相对视口定位，所有页面尺寸完全一致（且滚动时不重绘）。
+      document.body.style.backgroundAttachment = "fixed";
     };
     img.onerror = () => {
       if (!cancelled) resetBodyBg();

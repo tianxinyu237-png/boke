@@ -13,8 +13,10 @@ export function ArticleView({
   post,
   prevPost,
   nextPost,
+  recentPosts = [],
 }: {
   post: Post & { content?: string };
+  recentPosts?: { slug: string; title: string; date: string }[];
   prevPost?: (Post & { content?: string }) | null;
   nextPost?: (Post & { content?: string }) | null;
 }) {
@@ -35,9 +37,93 @@ export function ArticleView({
     <>
       <ScrollProgress />
 
-      <div className="max-w-6xl mx-auto px-4 pt-12 pb-24 flex gap-16">
+      <div className="mx-auto flex max-w-[1600px] justify-center gap-6 px-5 pt-12 pb-24 sm:px-8 lg:gap-8 lg:px-10 xl:gap-10">
+        {/* ── 左栏：文章信息（xl 以上显示，填满左侧空白）── */}
+        <aside className="hidden w-[200px] shrink-0 xl:block">
+          <div className="sticky top-24 space-y-7">
+            <div>
+              <p className="mb-2 text-[9.5px] font-medium uppercase tracking-[0.18em] text-text-muted">
+                分类
+              </p>
+              {post.category ? (
+                <a
+                  href={`/categories/${encodeURIComponent(post.category.name)}`}
+                  className="text-[13px] leading-snug text-text-secondary transition-colors hover:text-accent"
+                >
+                  {post.category.name}
+                </a>
+              ) : (
+                <span className="text-[13px] text-text-muted">未分类</span>
+              )}
+            </div>
+
+            {post.tags && post.tags.length > 0 ? (
+              <div>
+                <p className="mb-2 text-[9.5px] font-medium uppercase tracking-[0.18em] text-text-muted">
+                  标签
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {post.tags.map((t) => (
+                    <a
+                      key={t}
+                      href={`/tags/${encodeURIComponent(t)}`}
+                      className="rounded-full border border-border px-2 py-[3px] text-[10.5px] leading-none text-text-muted transition-colors hover:border-accent/40 hover:text-accent"
+                    >
+                      {t}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            <div>
+              <p className="mb-2 text-[9.5px] font-medium uppercase tracking-[0.18em] text-text-muted">
+                信息
+              </p>
+              <div className="space-y-1 text-[12px] leading-relaxed text-text-muted">
+                <div>
+                  {new Date(post.date).toLocaleDateString("zh-CN", {
+                    timeZone: "Asia/Shanghai",
+                    year: "numeric",
+                    month: "2-digit",
+                    day: "2-digit",
+                  })}
+                </div>
+                <div>{post.readTime}</div>
+                {typeof post.likeCount === "number" ? <div>🚀 {post.likeCount}</div> : null}
+              </div>
+            </div>
+
+            {recentPosts.length > 0 ? (
+              <div>
+                <p className="mb-2 text-[9.5px] font-medium uppercase tracking-[0.18em] text-text-muted">
+                  最近文章
+                </p>
+                <div className="space-y-2">
+                  {recentPosts.map((rp) => (
+                    <a
+                      key={rp.slug}
+                      href={`/posts/${rp.slug}`}
+                      className="block text-[12.5px] leading-snug text-text-secondary transition-colors hover:text-accent"
+                    >
+                      <span className="line-clamp-2">{rp.title}</span>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            <a
+              href="/sum"
+              className="inline-block text-[11.5px] text-text-muted transition-colors hover:text-accent"
+            >
+              ← 文章列表
+            </a>
+          </div>
+        </aside>
+
         {/* Main content */}
-        <article className="flex-1 min-w-0">
+        <article className="min-w-0 max-w-[980px] flex-1">
           <header className="mb-12">
             <motion.div
               className="flex items-center gap-3 text-xs text-text-muted mb-5"
@@ -151,7 +237,7 @@ export function ArticleView({
           <CommentSection />
         </article>
 
-        <aside className="hidden lg:block w-56 shrink-0">
+        <aside className="hidden w-[240px] shrink-0 lg:block">
           <div className="sticky top-24">
             <TableOfContents headings={headings} activeId={activeId} />
           </div>

@@ -35,7 +35,7 @@ export default function CategoriesContent() {
   }, []);
 
   return (
-    <div className="max-w-3xl mx-auto px-4 pt-12 pb-24">
+    <div className="mx-auto max-w-[1024px] px-5 pt-12 pb-24 sm:px-8">
       <motion.div
         initial={reduce ? {} : { opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}

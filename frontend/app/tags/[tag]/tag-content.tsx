@@ -24,7 +24,7 @@ export default function TagContent({
   const router = useRouter();
 
   return (
-    <div className="max-w-3xl mx-auto px-4 pt-12 pb-24">
+    <div className="mx-auto max-w-[1024px] px-5 pt-12 pb-24 sm:px-8">
       <header className="mb-10">
         <h1 className="text-2xl font-bold tracking-tight text-text-primary mb-2">
           <span className="text-accent">#</span> {tag}

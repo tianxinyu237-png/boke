@@ -13,7 +13,7 @@ const navLinks = [
   { href: "/", label: "首页", icon: "house" },
   { href: "/sum", label: "文章", icon: "box-archive" },
   { href: "/projects", label: "项目", icon: "code" },
-  { href: "/notes", label: "笔记", icon: "book" },
+  { href: "/notes", label: "知识库", icon: "book" },
   { href: "/about", label: "关于", icon: "user" },
 ];
 

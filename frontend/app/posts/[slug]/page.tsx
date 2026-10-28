@@ -88,6 +88,10 @@ export default async function PostPage({
         post={{ ...post, content: highlightedContent }}
         prevPost={prevPost}
         nextPost={nextPost}
+        recentPosts={allPosts
+          .filter((p) => p.slug !== post.slug)
+          .slice(0, 6)
+          .map((p) => ({ slug: p.slug, title: p.title, date: p.date }))}
       />
     </>
   );

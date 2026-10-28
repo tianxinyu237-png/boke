@@ -34,7 +34,7 @@ export default function ResumePage() {
   const categories = Array.from(new Set(about.techStack.map((t) => t.category)));
 
   return (
-    <div className="max-w-3xl mx-auto px-4 pt-12 pb-24">
+    <div className="mx-auto max-w-[1024px] px-5 pt-12 pb-24 sm:px-8">
       {/* Header */}
       <motion.header {...fadeUp(0)}>
         <h1 className="text-3xl font-bold tracking-tight text-text-primary">

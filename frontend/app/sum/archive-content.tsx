@@ -46,7 +46,7 @@ export default function ArchiveContent({ posts }: { posts: Post[] }) {
   const years = Object.keys(byYear).sort((a, b) => Number(b) - Number(a));
 
   return (
-    <div className="max-w-3xl mx-auto px-4 pt-12 pb-24">
+    <div className="mx-auto max-w-[1024px] px-5 pt-12 pb-24 sm:px-8">
       <header className="mb-8">
         <h1 className="text-2xl font-bold tracking-tight text-text-primary">
           文章

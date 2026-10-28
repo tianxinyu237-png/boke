@@ -35,7 +35,7 @@ export default function SearchPage() {
   }, [query, doSearch]);
 
   return (
-    <div className="max-w-3xl mx-auto px-6 pt-16 pb-24">
+    <div className="mx-auto max-w-[1024px] px-6 pt-16 pb-24">
       <motion.div
         initial={reduce ? {} : { opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}

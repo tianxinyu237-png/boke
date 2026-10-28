@@ -205,7 +205,7 @@ export default function NotesContent({ notes }: { notes: NoteData[] }) {
   }
 
   return (
-    <div className="mx-auto w-full max-w-[1360px] px-4 pb-24 pt-12 sm:px-6 lg:px-8">
+    <div className="mx-auto w-full max-w-[1440px] px-4 pb-24 pt-12 sm:px-6 lg:px-8">
       <header className="mb-8">
         <h1 className="serif-title mb-1 text-[26px] font-semibold tracking-tight text-text-primary">
           知识库

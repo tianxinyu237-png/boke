@@ -57,7 +57,7 @@ export default function HexapodContent() {
   }, []);
 
   return (
-    <div className="mx-auto max-w-[1400px] px-4 pt-8 pb-14 sm:px-6">
+    <div className="mx-auto max-w-[1440px] px-4 pt-8 pb-14 sm:px-6">
       <header className="mb-5">
         <h1 className="text-2xl font-semibold tracking-tight">
           六足机器人 <span className="text-[rgb(var(--color-accent))]">本机调试台</span>

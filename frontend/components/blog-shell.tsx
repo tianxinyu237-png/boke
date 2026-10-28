@@ -171,7 +171,7 @@ export default function BlogShell({ children }: { children: ReactNode }) {
 
       <header className="sticky top-0 z-50">
         <div
-          className="mx-auto max-w-5xl px-4 sm:px-6 h-14 flex items-center justify-between"
+          className="w-full px-5 sm:px-8 lg:px-10 h-14 flex items-center justify-between"
           style={{
             backdropFilter: "saturate(180%) blur(20px)",
             WebkitBackdropFilter: "saturate(180%) blur(20px)",
@@ -197,6 +197,9 @@ export default function BlogShell({ children }: { children: ReactNode }) {
               </div>
             )}
             <span className="text-sm sm:text-base">{SITE.name}</span>
+            <span className="ml-1 hidden border-l border-border pl-3 text-[11px] font-normal text-text-muted xl:inline">
+              {SITE.description}
+            </span>
           </motion.a>
 
           {/* Nav scrolls; theme toggle stays pinned so it's always reachable */}
@@ -218,7 +221,7 @@ export default function BlogShell({ children }: { children: ReactNode }) {
       <main className="flex-1 content-area">{children}</main>
 
       <footer className="border-t border-border mt-24">
-        <div className="max-w-5xl mx-auto px-6 pt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-text-muted">
+        <div className="mx-auto max-w-[1440px] px-6 pt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-text-muted">
           {footerLinks.map((link) => (
             <a
               key={link.href}
@@ -229,7 +232,7 @@ export default function BlogShell({ children }: { children: ReactNode }) {
             </a>
           ))}
         </div>
-        <div className="max-w-5xl mx-auto px-6 py-6 flex items-center justify-between text-sm text-text-muted">
+        <div className="mx-auto max-w-[1440px] px-6 py-6 flex items-center justify-between text-sm text-text-muted">
           <span>{SITE.name} &copy; {new Date().getFullYear()}</span>
           <VisitorStats />
           <span>已运行 {Math.ceil((Date.now() - new Date(SITE.founded || SITE_STATIC.founded).getTime()) / 86400000)} 天</span>

@@ -614,3 +614,37 @@ select[class~="bg-bg-soft"] {
   --w-list: 1024px;  /* 列表：文章列表、归档、关于等单列页（= max-w-5xl）*/
   --w-read: 760px;   /* 阅读：正文宽度，约 36 个中文字/行 */
 }
+
+/* ══════════════════════════════════════════════════════════════
+   霞鹜文楷 Lite（LXGW WenKai Lite, SIL OFL 1.1 免费商用）
+   用途：首页超大标题 / 时间流条目标题。
+   字体本体在 public/fonts/lxgw/，97 片 woff2 靠 unicode-range
+   按需加载（单片约 41KB），不会一次拉 3.9MB。
+   ══════════════════════════════════════════════════════════════ */
+.font-wenkai {
+  font-family: "LXGW WenKai Lite", "Songti SC", Georgia, serif;
+  font-feature-settings: "palt" 1;
+}
+
+/* 首页右栏「最近笔记」纵向滚动 —— 对应 liveout 首页那栏歌词
+   渲染两份内容 + translateY(-50%) 实现无缝循环；
+   每条用 margin-bottom 而非父级 gap，否则 -50% 会差一个 gap 而抖动。 */
+.notes-marquee {
+  animation: marquee-y 38s linear infinite;
+}
+.notes-marquee:hover {
+  animation-play-state: paused;
+}
+@keyframes marquee-y {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-50%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .notes-marquee {
+    animation: none;
+  }
+}

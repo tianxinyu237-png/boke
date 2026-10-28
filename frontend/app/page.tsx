@@ -1,46 +1,57 @@
-import { getPosts, type PaginatedPosts } from "@/lib/posts";
-import { PostListClient } from "@/components/post-list-client";
-import HeroSection from "@/components/hero-section";
-import FeaturedProjects from "@/components/featured-projects";
+import { getPosts } from "@/lib/posts";
+import HomeHero from "@/components/home-hero";
+import HomeStream from "@/components/home-stream";
 import VinylPlayer from "@/components/vinyl-player";
+import { loadProjectsConfigServer } from "@/lib/projects";
 
-export const dynamic = "force-dynamic";
+/* 首页 = 大字 Hero + 单一时间流（参考 blog.liveout.cn） */
+export const revalidate = 60;
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
-const SERVER_API = process.env.NEXT_PUBLIC_API_URL?.startsWith("/")
-  ? "http://backend:8080/api"
-  : API_BASE;
-const isServer = typeof window === "undefined";
-const API = isServer ? SERVER_API : API_BASE;
+interface NoteBrief {
+  id: number;
+  title: string;
+  content: string;
+  folder: string;
+  updatedAt: string;
+}
 
-async function getCategories() {
+async function getNotes(): Promise<NoteBrief[]> {
   try {
-    const res = await fetch(`${API}/categories`, { cache: "no-store" });
+    const api =
+      process.env.INTERNAL_API_URL ||
+      (process.env.NODE_ENV === "production"
+        ? "http://backend:8080/api"
+        : "http://localhost:8080/api");
+    const res = await fetch(`${api}/notes?light=true`, { next: { revalidate: 60 } });
     if (!res.ok) return [];
     return res.json();
-  } catch { return []; }
+  } catch {
+    return [];
+  }
 }
 
 export default async function HomePage() {
-  const [data, categories] = await Promise.all([
+  const [data, notes, projectsCfg] = await Promise.all([
     getPosts(0, 50),
-    getCategories(),
+    getNotes(),
+    loadProjectsConfigServer(),
   ]);
+
+  const recentNotes = [...notes]
+    .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+    .slice(0, 8);
 
   return (
     <>
-      {/* Hero section with embedded music player */}
-      <HeroSection />
+      <HomeHero
+        notes={recentNotes}
+        postCount={data.posts.length}
+        noteCount={notes.length}
+      />
 
-      {/* Featured projects */}
-      <FeaturedProjects />
+      <HomeStream posts={data.posts} notes={notes} projects={projectsCfg.projects} />
 
-      {/* Post list */}
-      <div className="max-w-3xl mx-auto px-4 pb-24 pt-4">
-        <PostListClient initialData={data} categories={categories} />
-      </div>
-
-      {/* Floating vinyl player (shares audio state with hero) */}
+      {/* 浮窗唱片机：音乐功能独立于 Hero */}
       <VinylPlayer />
     </>
   );

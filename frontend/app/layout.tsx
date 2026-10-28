@@ -113,6 +113,9 @@ export default async function RootLayout({
             BackgroundLayer 客户端应用同值, 幂等无闪) */}
         <style dangerouslySetInnerHTML={{ __html: bgStyle }} />
         {bgPreload && <link rel="preload" as="image" href={bgPreload} />}
+        {/* 霞鹜文楷 Lite（SIL OFL 免费商用）：97 片 woff2 + unicode-range，
+            浏览器只下载页面实际用到的分片，单片约 41KB */}
+        <link rel="stylesheet" href="/fonts/lxgw/wenkai.css" />
         <script dangerouslySetInnerHTML={{ __html: `(function(){try{var t=localStorage.getItem('devlog-theme')||'dark';if(t==='light')document.documentElement.classList.add('light')}catch(e){}})();
 /* Next.js 14 head 管理竞态防护: 路由切换时 React 卸载的 head 节点可能已被
    router 提前移除, removeChild 会抛 NotFoundError 导致整页崩溃 (next#58055)。

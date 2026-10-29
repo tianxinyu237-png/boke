@@ -5,6 +5,8 @@ import NoteDetailClient from "./note-detail-client";
 interface NoteData {
   id: number;
   title: string;
+  displayTitle?: string | null;
+  collection?: string | null;
   content: string;
   noteType?: string;
   htmlContent?: string;
@@ -32,7 +34,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const { id } = await params;
   const note = await getNote(id);
   if (!note) return { title: "笔记未找到" };
-  return { title: note.title, description: note.content?.slice(0, 160) || "" };
+  return { title: (note.displayTitle?.trim() || note.title), description: note.content?.slice(0, 160) || "" };
 }
 
 export default async function NoteDetailPage({ params }: { params: Promise<{ id: string }> }) {

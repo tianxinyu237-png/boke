@@ -19,6 +19,15 @@ interface NoteData {
   slug?: string;
   folder: string;
   updatedAt: string;
+  /* 后台「笔记」页设的展示字段，数据库存，同步不覆盖 */
+  collection?: string | null;
+  displayTitle?: string | null;
+  sortOrder?: number | null;
+}
+
+/** 博客上显示的名字：后台设了展示标题就用它，否则用 Obsidian 里的文件名 */
+function shownTitle(n: NoteData) {
+  return (n.displayTitle && n.displayTitle.trim()) || n.title || "无标题";
 }
 
 interface FolderNode {
@@ -125,6 +134,7 @@ export default function NotesContent({ notes }: { notes: NoteData[] }) {
     if (q) {
       result = result.filter(
         (n) =>
+          shownTitle(n).toLowerCase().includes(q) ||
           (n.title || "").toLowerCase().includes(q) ||
           (n.content || "").toLowerCase().includes(q)
       );
@@ -135,9 +145,19 @@ export default function NotesContent({ notes }: { notes: NoteData[] }) {
   const grouped = useMemo(() => {
     const map = new Map<string, NoteData[]>();
     for (const n of visible) {
-      const key = n.folder || "";
+      // 后台给笔记设了「栏目」就按栏目归组，没设的退回 Obsidian 目录名
+      const key = (n.collection && n.collection.trim()) || n.folder || "";
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push(n);
+    }
+    // 组内先按后台设的排序值（小的在前），相同则新更新的靠前
+    for (const [, arr] of Array.from(map)) {
+      arr.sort((a, b) => {
+        const sa = a.sortOrder ?? 0;
+        const sb = b.sortOrder ?? 0;
+        if (sa !== sb) return sa - sb;
+        return (b.updatedAt || "").localeCompare(a.updatedAt || "");
+      });
     }
     return Array.from(map.entries()).sort(([a], [b]) =>
       a === "" ? -1 : b === "" ? 1 : a.localeCompare(b, "zh-CN")
@@ -334,7 +354,7 @@ export default function NotesContent({ notes }: { notes: NoteData[] }) {
                           <div className="min-w-0">
                             <h3 className="font-wenkai text-[15.5px] leading-snug text-text-primary transition-colors group-hover:text-accent">
                               {note.noteType === "mindmap" && "🧠 "}
-                              {note.title || "无标题"}
+                              {shownTitle(note)}
                             </h3>
                             <p className="mt-1 truncate text-[11.5px] leading-relaxed text-text-muted">
                               {preview(note.content)}
@@ -424,7 +444,7 @@ export default function NotesContent({ notes }: { notes: NoteData[] }) {
                             href={`/notes/${n.id}`}
                             className="group rounded-md px-1.5 py-1.5 text-[12.5px] text-text-secondary transition-colors hover:bg-bg-base hover:text-accent"
                           >
-                            <div className="truncate">{n.title}</div>
+                            <div className="truncate">{shownTitle(n)}</div>
                             <div className="text-[10px] text-text-muted">
                               {n.updatedAt &&
                                 new Date(n.updatedAt).toLocaleDateString("zh-CN", {

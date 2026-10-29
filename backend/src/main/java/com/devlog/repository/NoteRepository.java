@@ -18,6 +18,15 @@ public interface NoteRepository extends JpaRepository<Note, Long> {
 
     Optional<Note> findBySlug(String slug);
 
+    /* 前台只查这些 —— visible 为 NULL 的历史数据自动被排除 */
+    List<Note> findByVisibleTrueOrderBySortOrderAscUpdatedAtDesc();
+
+    List<Note> findByVisibleTrueAndFolderOrderBySortOrderAscUpdatedAtDesc(String folder);
+
+    List<Note> findByVisibleTrueAndCollectionOrderBySortOrderAscUpdatedAtDesc(String collection);
+
+    long countByVisibleTrue();
+
     @Query("SELECT DISTINCT n.folder FROM Note n WHERE n.folder IS NOT NULL AND n.folder <> '' ORDER BY n.folder")
     List<String> findAllFolders();
 }

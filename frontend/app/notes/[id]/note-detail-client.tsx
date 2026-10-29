@@ -31,6 +31,13 @@ interface NoteData {
   slug?: string;
   folder: string;
   updatedAt: string;
+  displayTitle?: string | null;
+  collection?: string | null;
+}
+
+/** 展示标题优先：后台在 /admin/notes 设的 displayTitle 覆盖 Obsidian 文件名 */
+function shownTitle(n: NoteData) {
+  return (n.displayTitle && n.displayTitle.trim()) || n.title || "无标题";
 }
 
 /* ───────────────────────── 左侧目录树节点 ───────────────────────── */
@@ -310,7 +317,7 @@ export default function NoteDetailClient({ note }: { note: NoteData }) {
                 )}
               </div>
               <h1 className="serif-title text-[26px] font-semibold leading-tight text-text-primary sm:text-[32px]">
-                {note.title}
+                {shownTitle(note)}
               </h1>
             </div>
 
@@ -323,7 +330,7 @@ export default function NoteDetailClient({ note }: { note: NoteData }) {
                   srcDoc={note.htmlContent}
                   className="w-full border-0"
                   style={{ height: "80vh" }}
-                  title={note.title}
+                  title={shownTitle(note)}
                   sandbox="allow-scripts allow-same-origin"
                 />
               </div>

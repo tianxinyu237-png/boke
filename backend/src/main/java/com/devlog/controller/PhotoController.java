@@ -31,6 +31,7 @@ public class PhotoController {
     @PutMapping("/{id}")
     public ResponseEntity<?> update(@PathVariable Long id, @RequestBody Photo updates) {
         return repo.findById(id).map(existing -> {
+            if (updates.getUrl() != null && !updates.getUrl().isBlank()) existing.setUrl(updates.getUrl());
             if (updates.getTitle() != null) existing.setTitle(updates.getTitle());
             if (updates.getDescription() != null) existing.setDescription(updates.getDescription());
             if (updates.getSortOrder() != existing.getSortOrder()) existing.setSortOrder(updates.getSortOrder());

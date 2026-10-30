@@ -139,7 +139,11 @@ const SERVER_API = "http://backend:8080/api";
 
 export async function loadProjectsConfigServer(): Promise<ProjectsConfig> {
   try {
-    const res = await fetch(`${SERVER_API}/site-config`, { next: { revalidate: 300 } });
+    // 项目配置是后台最常改的数据，必须改完立刻生效。
+    // 原来这里是 { next: { revalidate: 300 } }，导致后台改完要等 5 分钟才看得到，
+    // 容易被误判成"保存失败"。项目页本身已是 force-dynamic，这里 no-store 不会
+    // 增加额外的渲染成本（个人博客流量下每次打一次后端完全可接受）。
+    const res = await fetch(`${SERVER_API}/site-config`, { cache: "no-store" });
     if (!res.ok) return DEFAULT_PROJECTS;
     const data = await res.json();
     if (!data.projectsConfig) return DEFAULT_PROJECTS;

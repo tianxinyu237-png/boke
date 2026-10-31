@@ -14,12 +14,12 @@ const navLinks = [
   { href: "/sum", label: "文章", icon: "box-archive" },
   { href: "/projects", label: "项目", icon: "code" },
   { href: "/notes", label: "知识库", icon: "book" },
+  { href: "/resume", label: "简历", icon: "file-text" },
   { href: "/about", label: "关于", icon: "user" },
 ];
 
 // Secondary destinations live in the footer (keeps the top bar calm)
 const footerLinks = [
-  { href: "/resume", label: "简历" },
   { href: "/categories", label: "分类" },
   { href: "/moments", label: "碎碎念" },
   { href: "/links", label: "友链" },
